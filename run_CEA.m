@@ -5,15 +5,16 @@
 % Inputs: Pc, OF, Pamb, A_e, eps (Ae/At), Propellant Mass
 % Outputs: C*, C_tau, A_t, mdot, Thrust, Isp, Burn Time
 
+
 function Prop = run_CEA(Prop, params)
 
-    Engine = CEA('problem','rocket','equilibrium','fac','ac/at',params.ac_at,'o/f',Prop.OF,'p(psi)',Pc_psi,'supersonic',Prop.eps,'reactants', ...
+    Engine = CEA('problem','rocket','equilibrium','fac','ac/at',params.ac_at,'o/f',Prop.OF,'p(psi)', Prop.Pc,'supersonic',Prop.eps,'reactants', ...
              'fuel','C2H5OH(L)','wt%',params.eth_ratio*100,'t(k)',params.T_fuel_inlet,'fuel','H2O(L)','wt%',(1-params.eth_ratio)*100,'t(k)', ...
             params.T_fuel_inlet,'oxid','O2(L)','wt%',100,'t(k)',params.T_ox_inlet,'output','transport','mks','end');
 
     % Calculate C_star
 
-    Prop.C_star = Engine.output.eql.cstar(1);
+    Prop.C_star = Engine.output.eql.cstar(1); 
 
      % Calculate C_tau
 
@@ -25,7 +26,7 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate C_tau at Vaccuum
 
-    Prop.Ctau_vac = Prop.Ctau + Prop.eps * (Prop.Pe / Pc);
+    Prop.Ctau_vac = Prop.Ctau + Prop.eps * (Prop.Pe / Prop.Pc);
 
     % Calculate throat area
 
@@ -41,7 +42,7 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate Ctau at set ambient pressure
 
-    Ctau_ref = Prop.Ctau_vac - Prop.eps * (params.P_amb / Pc);
+    Ctau_ref = Prop.Ctau_vac - Prop.eps * (params.P_amb / Prop.Pc);
 
     % Calculate thrust for Isp
 
