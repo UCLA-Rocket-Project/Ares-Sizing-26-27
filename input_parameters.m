@@ -2,7 +2,7 @@ function p = input_parameters()
 
     p.Ctau_eff = 0.98;
 
-    p.cstar_eff = 0.90;
+    p.Cstar_eff = 0.90;
 
     p.P_amb = ; % psi
 
