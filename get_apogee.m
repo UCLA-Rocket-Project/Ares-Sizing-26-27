@@ -5,7 +5,18 @@
 % Inputs: Thrust (theoretically constant), Cd data, Mach data, prop mass, burn time, dry mass
 % Outputs: Apogee (AGL) or -1 if not meeting OFTRS
 
-function apogee = get_apogee(T, Cd_data, M_data, prop_mass, tb, dry_mass)
+function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
+  
+     mdot = Prop.mdot; 
+    cstar = Prop.C_star; 
+    cstar_eff = params.Cstar_eff; 
+    eps = Prop.eps; 
+    Pc = Prop.Pc; 
+    Ctau_vac = Prop.Ctau_vac; 
+    ctau_eff = params.Ctau_eff; 
+    prop_mass = params.prop_mass; 
+    tb = Prop.t_b;
+
     g = 32.174; % ft/s^2
     dt = 0.01; % s
     h0 = 3000; % ft
@@ -20,11 +31,15 @@ function apogee = get_apogee(T, Cd_data, M_data, prop_mass, tb, dry_mass)
 
     while m > dry_mass
         % Find Cd for current velocity
-        [rho, temp] = get_air_density(h);
+        [rho, temp, p] = get_air_properties(h);
+        Pamb = p * 0.145038; %kPa to psi
         rho = rho/16.018; % lb/ft^3
         v_s = sqrt(1.4*287*(temp+273.15))*3.281; % ft/s
         M = v/v_s;
         Cd = interp1(M_data,Cd_data, M,'linear','extrap'); % interpolate for Cd
+
+        Ctau_t = Ctau_vac - eps * (Pamb / Pc);
+        T = mdot * cstar * cstar_eff * Ctau_t * ctau_eff;
 
         m = max(dry_mass, m - m_dot*dt);
         a = (T - m - 0.5 * Cd * rho * v^2*A)*g/m; % ft/s^2
@@ -42,7 +57,7 @@ function apogee = get_apogee(T, Cd_data, M_data, prop_mass, tb, dry_mass)
     end
 
     while v >= 0 % coasting
-        [rho, temp] = get_air_density(h);
+        [rho, temp] = get_air_properties(h);
         rho = rho/16.018; % lb/ft^3
         v_s = sqrt(1.4*287*(temp+273.15))*3.281; % ft/s
         M = v/v_s;
@@ -55,8 +70,8 @@ function apogee = get_apogee(T, Cd_data, M_data, prop_mass, tb, dry_mass)
     apogee = h-h0;
 end
 
-function [rho,temp] = get_air_density(h)
-    % Calculate air density for a specific altitude
+function [rho,temp,p] = get_air_properties(h)
+    % Calculate air properties for a specific altitude
     % Using: https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
     h = h/3.281; % m
     if h < 11000
