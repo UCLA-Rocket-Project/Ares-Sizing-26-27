@@ -25,7 +25,7 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate C_tau at Vaccuum
 
-    Prop.Ctau_vac = Prop.CF_pe + Prop.eps * (Prop.Pe / Pc_psi);
+    Prop.Ctau_vac = Prop.Ctau + Prop.eps * (Prop.Pe / Pc);
 
     % Calculate throat area
 
@@ -33,7 +33,7 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate mdot
 
-    Prop.mdot = (Prop.A_t * Prop.Pc) / (Prop.C_star * params.cstar_eff);
+    Prop.mdot = (Prop.A_t * Prop.Pc) / (Prop.C_star * params.Cstar_eff);
 
     % Calculate burn time
 
@@ -41,11 +41,11 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate Ctau at set ambient pressure
 
-    Ctau_ref = Prop.CF_vac - Prop.eps * (params.P_amb / Pc_psi);
+    Ctau_ref = Prop.Ctau_vac - Prop.eps * (params.P_amb / Pc);
 
     % Calculate thrust for Isp
 
-    Thrust_ref = Prop.mdot * Prop.C_star * params.cstar_eff * Ctau_ref * params.CF_eff;
+    Thrust_ref = Prop.mdot * Prop.C_star * params.Cstar_eff * Ctau_ref * params.Ctau_eff;
 
     % Calculate specific impulse
 
