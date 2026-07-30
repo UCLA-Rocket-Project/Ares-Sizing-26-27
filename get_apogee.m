@@ -1,0 +1,76 @@
+% get_apogee
+
+% Calculates apogee
+
+% Inputs: Thrust (theoretically constant), Cd data, Mach data, prop mass, burn time, dry mass
+% Outputs: Apogee (AGL) or -1 if not meeting OFTRS
+
+function apogee = get_apogee(T, Cd_data, M_data, prop_mass, tb, dry_mass)
+    g = 32.174; % ft/s^2
+    dt = 0.01; % s
+    h0 = 3000; % ft
+    v_oftr = 100; % ft/s
+    A = pi*16/144; % ft^2
+    m_dot = prop_mass/tb; % lb/s
+    m = dry_mass + prop_mass; % lb
+ 
+    h = h0;% ft
+    v = 0; % ft/s
+    oftr_checked = false;
+
+    while m > dry_mass
+        % Find Cd for current velocity
+        [rho, temp] = get_air_density(h);
+        rho = rho/16.018; % lb/ft^3
+        v_s = sqrt(1.4*287*(temp+273.15))*3.281; % ft/s
+        M = v/v_s;
+        Cd = interp1(M_data,Cd_data, M,'linear','extrap'); % interpolate for Cd
+
+        m = max(dry_mass, m - m_dot*dt);
+        a = (T - m - 0.5 * Cd * rho * v^2*A)*g/m; % ft/s^2
+        v = v + a*dt; % ft/s
+        h = h + v*dt +0.5*a*dt^2; % ft
+
+        % Check oftr condition
+        if oftr_checked == false && h >= h0 + 48
+            if v < v_oftr
+                apogee = -1;
+                return
+            end
+            oftr_checked = true;
+        end
+    end
+
+    while v >= 0 % coasting
+        [rho, temp] = get_air_density(h);
+        rho = rho/16.018; % lb/ft^3
+        v_s = sqrt(1.4*287*(temp+273.15))*3.281; % ft/s
+        M = v/v_s;
+        Cd = interp1(M_data,Cd_data, M,'linear','extrap');
+
+        a = (-dry_mass - 0.5 * Cd * rho * v^2*A)*g/dry_mass; % ft/s^2
+        v = v + a*dt; % ft/s
+        h = h + v*dt+0.5*a*dt^2; % ft
+    end
+    apogee = h-h0;
+end
+
+function [rho,temp] = get_air_density(h)
+    % Calculate air density for a specific altitude
+    % Using: https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html
+    h = h/3.281; % m
+    if h < 11000
+        T = 15.04 - 0.00649*h; % C
+        p = 101.29 *((T+273.15)/288.08)^5.256; % Kpa
+    elseif h < 25000
+        T = -56.46; % C
+        p = 22.65*exp(1.73-0.000157*h); % Kpa
+    else
+        T = -131.21 + 0.00299*h; % C
+        p = 2.488 * ((T+273.15)/216.6)^(-11.388); % Kpa
+    end
+    rho = p/(0.2869*(T+273.15)); % kg/m^3
+    temp = T;
+end
+
+
