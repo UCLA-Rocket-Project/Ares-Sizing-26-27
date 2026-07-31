@@ -21,9 +21,9 @@ end
 
 for i = 1:length(copv_volumes)
     if copv_volumes(i) > press_v
-        PV_mel.copv_v = copv_volumes(i-1);
-        PV_mel.copv_m = copv_masses(i-1);
-        PV_mel.copv_l = copv_lengths(i-1);
+        PV_mel.copv_v = copv_volumes(i);
+        PV_mel.copv_m = copv_masses(i);
+        PV_mel.copv_l = copv_lengths(i);
         break
     end
 end
