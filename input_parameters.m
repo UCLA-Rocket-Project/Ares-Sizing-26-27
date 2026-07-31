@@ -4,32 +4,38 @@ function p = input_parameters()
 
     p.Cstar_eff = 0.90;
 
-    p.P_amb = ; % psi
+    p.P_amb = 14.7; % psi
 
-    p.ox_density = ; % kg/m3
+    p.T_fuel = 300; % K
 
-    p.fuel_density = ; % kg/m3
+    p.T_ox = 94; % K
 
-    p.ullage = ;
+    p.P_fuel_tank = 600 * 6894; %pa
 
-    p.ox_feed_CdA = ; % m^2
+    p.P_ox_tank = 600 * 6894; %pa
+    
+    p.ox_density = py.CoolProp.CoolProp.PropsSI('D','T', p.T_ox, 'P', p.P_ox_tank, 'oxygen'); % kg/m3
 
-    p.fuel_feed_CdA = ; % m^2
-
-    p.channel_CdA = ; % m^2
-
-    p.inj_ox_CdA = ; % m^2
-
-    p.inj_f_CdA = ; % m^2
-
+    p.water_density = py.CoolProp.CoolProp.PropsSI('D','T', p.T_fuel, 'P', p.P_fuel_tank, 'water'); % kg/m^3
+    p.ethanol_density = py.CoolProp.CoolProp.PropsSI('D','T',p.T_fuel, 'P', p.P_fuel_tank, 'ethanol'); % kg/m^3
     p.eth_ratio = 0.75;
 
-    p.T_fuel_inlet = ; % K
+    p.fuel_density = mass_fraction(p.eth_ratio, p.ethanol_density, p.water_density); % kg/m3
 
-    p.T_ox_inlet = ; % K
+    p.ullage = 5;
 
-    p.ac_at = ;
+    % p.ox_feed_CdA = ; % m^2
 
-    p.A_e = ; % m^2
+    % p.fuel_feed_CdA = ; % m^2
+
+    %p.channel_CdA = ; % m^2
+
+    %p.inj_ox_CdA = ; % m^2
+
+    %p.inj_f_CdA = ; % m^2
+
+    %p.ac_at = ;
+
+    %p.A_e = ; % m^2
 
 end
