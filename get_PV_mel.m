@@ -64,7 +64,7 @@ a = r_o - cap_t; % in
 knuckle_hoop = 1.5*p_operating*a/cap_t; % psi
 MOS_cap_y = S_y/(FS_y*knuckle_hoop)-1;
 
-while MOs_cap_y <= 0
+while MOS_cap_y <= 0
     cap_t = cap_t + 1/32; % in
     a = r_o - cap_t; % in
     knuckle_hoop = 1.5*p_operating*a/cap_t; % psi
