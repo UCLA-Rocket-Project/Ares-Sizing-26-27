@@ -22,7 +22,7 @@ function p = input_parameters()
 
     p.fuel_density = mass_fraction(p.eth_ratio, p.ethanol_density, p.water_density); % kg/m3
 
-    p.ullage = 5;
+    p.ullage = 0.05;
 
     % p.ox_feed_CdA = ; % m^2
 
