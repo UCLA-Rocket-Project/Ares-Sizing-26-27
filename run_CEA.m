@@ -52,5 +52,4 @@ function Prop = run_CEA(Prop, params)
     % Calculate specific impulse
 
     Prop.Isp = Thrust_ref / (Prop.mdot * 9.81); % s
-
 end
