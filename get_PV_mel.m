@@ -38,6 +38,7 @@ FS_y = 1.25; % FOS Yield for pressure vessels
 % E = 1; % Weld efficiency factor (can ignore)
 
 tank_thicknesses = [0.125, 0.25, 0.375]; % in, 
+% Can be found on OnlineMetals, Speedy metals, Grainger, and BuyMetal
 % ^^ need to research available tubes to make array
 
 for t = 1:length(tank_thicknesses)
