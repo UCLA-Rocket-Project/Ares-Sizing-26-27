@@ -24,6 +24,10 @@ function p = input_parameters()
 
     p.ullage = 0.05;
 
+    p.T_He = 298; % K initial He temp
+
+    p.P_He_init = 4500; %psi COPV pressure
+
     % p.ox_feed_CdA = ; % m^2
 
     % p.fuel_feed_CdA = ; % m^2
