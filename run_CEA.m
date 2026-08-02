@@ -14,31 +14,32 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate C_star
 
-    Prop.C_star = Engine.output.eql.cstar(1); 
+    Prop.C_star = Engine.output.eql.cstar(1); %m/s
 
      % Calculate C_tau
 
-    Prop.Ctau = Engine.output.eql.cf(end);
+    Prop.Ctau = Engine.output.eql.cf(end); 
 
     % Calculate Exit Pressure
 
-    Prop.Pe = Engine.output.eql.pressure(end) * 14.5038; 
+    Prop.Pe = Engine.output.eql.pressure(end) * 14.5038; % bar to psi
 
     % Calculate C_tau at Vaccuum
 
-    Prop.Ctau_vac = Prop.Ctau + Prop.eps * (Prop.Pe / Prop.Pc);
+    Prop.Ctau_vac = Prop.Ctau + Prop.eps * (Prop.Pe / Prop.Pc); 
 
     % Calculate throat area
 
-    Prop.A_t = params.A_e / Prop.eps;
+    Prop.A_t = params.A_e / Prop.eps; %m^2
 
     % Calculate mdot
 
-    Prop.mdot = (Prop.A_t * Prop.Pc) / (Prop.C_star * params.Cstar_eff);
+    Pc_pascals = Prop.Pc * 6894.76; % psi to Pa for mdot
+    Prop.mdot = (Prop.A_t * Pc_pascals) / (Prop.C_star * params.Cstar_eff); %kg/s
 
     % Calculate burn time
 
-    Prop.t_b = params.prop_mass / Prop.mdot;
+    Prop.t_b = params.prop_mass / Prop.mdot; % s 
 
     % Calculate Ctau at set ambient pressure
 
@@ -46,10 +47,10 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate thrust for Isp
 
-    Thrust_ref = Prop.mdot * Prop.C_star * params.Cstar_eff * Ctau_ref * params.Ctau_eff;
+    Thrust_ref = Prop.mdot * Prop.C_star * params.Cstar_eff * Ctau_ref * params.Ctau_eff; % N
 
     % Calculate specific impulse
 
-    Prop.Isp = Thrust_ref / (Prop.mdot * 9.81);
+    Prop.Isp = Thrust_ref / (Prop.mdot * 9.81); % s
 
 end
