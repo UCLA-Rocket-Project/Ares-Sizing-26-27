@@ -38,7 +38,10 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
         M = v/v_s;
         Cd = interp1(M_data,Cd_data, M,'linear','extrap'); % interpolate for Cd
 
+        % Find Ctau at each ambient pressure by subtracting expansion term from Ctau at vacuum 
         Ctau_t = Ctau_vac - eps * (Pamb / Pc);
+
+        % Finds transient thrust as nozzle goes from under to overexpanded
         T = mdot * cstar * cstar_eff * Ctau_t * ctau_eff;
 
         m = max(dry_mass, m - m_dot*dt);
