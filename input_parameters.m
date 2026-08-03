@@ -28,18 +28,18 @@ function p = input_parameters()
 
     p.P_He_init = 4500; %psi COPV pressure
 
-    % p.ox_feed_CdA = ; % m^2
+    % p.ox_feed_CdA = ; % in^2
 
-    % p.fuel_feed_CdA = ; % m^2
+    % p.fuel_feed_CdA = ; % in^2
 
-    %p.channel_CdA = ; % m^2
+    %p.channel_CdA = ; % in^2
 
-    %p.inj_ox_CdA = ; % m^2
+    %p.inj_ox_CdA = ; % in^2
 
-    %p.inj_f_CdA = ; % m^2
+    %p.inj_f_CdA = ; % in^2
 
     %p.ac_at = ;
 
-    %p.A_e = ; % m^2
+    %p.A_e = ; % in^2
 
 end
