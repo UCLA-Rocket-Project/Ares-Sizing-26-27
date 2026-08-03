@@ -41,6 +41,9 @@ M_data = readmatrix('M_data.csv'); % **need data
 apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass); % ft
 vehicle_length = 158.5 + PV_mel.fuel_l + PV_mel.ox_l; % in
 % ^ 158.5 in is Pandora's length without tank barrels
+if apogee == -3
+    fprintf("Not meeting OTRS.\n");
+end
 
 % Store apogee and length in an array of results for graphing at end
 results.apogee.append(apogee);
@@ -49,7 +52,7 @@ results.prop_mass.append(prop_mass);
 
 %% Plotting
 for i = 1:length(results.apogee)
-    if results.apogee(i) == -1 || results.apogee(i) == -2
+    if results.apogee(i) == -1 || results.apogee(i) == -2 || results.apogee(i) == -3
         results.apogee(i) = [];
         results.length(i = []);
         results.prop_mass(i) = [];

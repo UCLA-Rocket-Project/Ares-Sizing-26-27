@@ -3,7 +3,7 @@
 % Calculates apogee
 
 % Inputs: Thrust (theoretically constant), Cd data, Mach data, prop mass, burn time, dry mass
-% Outputs: Apogee (AGL) or -1 if not meeting OFTRS
+% Outputs: Apogee (AGL) or -3 if not meeting OFTRS
 
 function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
   
@@ -52,7 +52,7 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
         % Check oftr condition
         if oftr_checked == false && h >= h0 + 48
             if v < v_oftr
-                apogee = -1;
+                apogee = -3;
                 return
             end
             oftr_checked = true;
