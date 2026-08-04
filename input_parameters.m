@@ -13,11 +13,16 @@ function p = input_parameters()
     p.P_fuel_tank = 600 * 6894; %pa
 
     p.P_ox_tank = 600 * 6894; %pa
+
+    % initial pressure inputs for CoolProp density call, not used
+    % Tank pressure calculated from run_press used in main
     
     p.ox_density = py.CoolProp.CoolProp.PropsSI('D','T', p.T_ox, 'P', p.P_ox_tank, 'oxygen'); % kg/m3
 
     p.water_density = py.CoolProp.CoolProp.PropsSI('D','T', p.T_fuel, 'P', p.P_fuel_tank, 'water'); % kg/m^3
     p.ethanol_density = py.CoolProp.CoolProp.PropsSI('D','T',p.T_fuel, 'P', p.P_fuel_tank, 'ethanol'); % kg/m^3
+
+    %density conversions happen inside run_press, CoolProp returns SI 
     p.eth_ratio = 0.75;
 
     p.fuel_density = mass_fraction(p.eth_ratio, p.ethanol_density, p.water_density); % kg/m3
@@ -28,15 +33,17 @@ function p = input_parameters()
 
     p.P_He_init = 4500; %psi COPV pressure
 
-    % p.ox_feed_CdA = ; % in^2
+    % p.ox_feed_CdA = ; % m^2
 
-    % p.fuel_feed_CdA = ; % in^2
+    % p.fuel_feed_CdA = ; % m^2
 
-    %p.channel_CdA = ; % in^2
+    %p.channel_CdA = ; % m^2
 
-    %p.inj_ox_CdA = ; % in^2
+    %p.inj_ox_CdA = ; % m^2
 
-    %p.inj_f_CdA = ; % in^2
+    %p.inj_f_CdA = ; % m^2
+
+    % CdA conversions happen inside run_press
 
     %p.ac_at = ;
 

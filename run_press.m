@@ -8,8 +8,11 @@
 
 function [Prop, Press] = run_press(Prop, params)
 
-    % Find tank pressure needed for given chamber pressure
+    mdot_fuel_SI = Prop.mdot_fuel / 2.20462; % lbm/s to kg/s
+    mdot_ox_SI = Prop.mdot_ox / 2.20462; %lbm/s to kg/s
 
+    % Find tank pressure needed for given chamber pressure
+ 
     % combine fuel and ox CdA
     fuel_CdA = CdA_series([params.fuel_feed_CdA, params.channel_CdA, params.inj_f_CdA]); % m^2
     ox_CdA   = CdA_series([params.ox_feed_CdA, params.inj_ox_CdA]); % m^2
@@ -26,11 +29,12 @@ function [Prop, Press] = run_press(Prop, params)
 
     % Find He volume needed 
 
-    fuel_mass = Prop.prop_mass / (Prop.OF + 1); % kg
-    ox_mass   = Prop.prop_mass - fuel_mass; % kg
+    prop_mass_SI = Prop.prop_mass / 2.20462; % lbm to kg
+    fuel_mass_SI = prop_mass_SI / (Prop.OF + 1); % kg
+    ox_mass_SI   = prop_mass_SI - fuel_mass_SI; % kg
 
-    fuel_tank_volume = (fuel_mass / params.fuel_density) / (1 - params.ullage); % m^3
-    ox_tank_volume   = (ox_mass / params.ox_density) / (1 - params.ullage); % m^3
+    fuel_tank_volume = (fuel_mass_SI / params.fuel_density) / (1 - params.ullage); % m^3
+    ox_tank_volume   = (ox_mass_SI / params.ox_density) / (1 - params.ullage); % m^3
 
     tank_press_pa = Press.tank_press * 6894.76; % psi to Pa (CoolProp wants Pa)
 
@@ -51,7 +55,8 @@ function [Prop, Press] = run_press(Prop, params)
 
     % divide by COPV side Helium density to find COPV volume
 
-    Press.V_He = mass_He_required / He_density_full; % m^3
+    V_He_SI = mass_He_required / He_density_full; % m^3
+    Press.V_He = V_He_SI * 1000; % m^3 to L for get_PV_mel
 
 end
 
