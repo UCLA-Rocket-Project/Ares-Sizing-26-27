@@ -39,6 +39,8 @@ function Prop = run_CEA(Prop, params)
     Pc_pascals = Prop.Pc * 6894.76; % psi to Pa for mdot
     mdot_SI = (At_SI * Pc_pascals) / (C_star_SI * params.Cstar_eff); %kg/s
     Prop.mdot = mdot_SI * 2.20462; % kg/s to lbm/s
+    Prop.mdot_fuel = Prop.mdot / (1 + Prop.OF); %lbm/s
+    Prop.mdot_ox = Prop.mdot - Prop.mdot_fuel; % lbm/s
 
     % Calculate burn time
 
