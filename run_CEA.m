@@ -14,7 +14,8 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate C_star
 
-    Prop.C_star = Engine.output.eql.cstar(1); %m/s
+    C_star_SI = Engine.output.eql.cstar(1); % m/s
+    Prop.C_star = C_star_SI * 3.28084; %m/s to ft/s
 
      % Calculate C_tau
 
@@ -30,12 +31,14 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate throat area
 
-    Prop.A_t = params.A_e / Prop.eps; %m^2
+    Prop.A_t = params.A_e / Prop.eps; % in^2
+    At_SI = Prop.A_t * 0.00064516; % in^2 to m^2
 
     % Calculate mdot
 
     Pc_pascals = Prop.Pc * 6894.76; % psi to Pa for mdot
-    Prop.mdot = (Prop.A_t * Pc_pascals) / (Prop.C_star * params.Cstar_eff); %kg/s
+    mdot_SI = (At_SI * Pc_pascals) / (C_star_SI * params.Cstar_eff); %kg/s
+    Prop.mdot = mdot_SI * 2.20462; % kg/s to lbm/s
 
     % Calculate burn time
 
@@ -47,9 +50,9 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate thrust for Isp
 
-    Thrust_ref = Prop.mdot * Prop.C_star * params.Cstar_eff * Ctau_ref * params.Ctau_eff; % N
+    Thrust_ref_SI = mdot_SI * C_star_SI * params.Cstar_eff * Ctau_ref * params.Ctau_eff; % N
 
     % Calculate specific impulse
 
-    Prop.Isp = Thrust_ref / (Prop.mdot * 9.81); % s
+    Prop.Isp = (Thrust_ref_SI * 0.224809) / (Prop.mdot); % s , Thrust from N to lbf
 end
