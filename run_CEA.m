@@ -44,7 +44,7 @@ function Prop = run_CEA(Prop, params)
 
     % Calculate burn time
 
-    Prop.t_b = params.prop_mass / Prop.mdot; % s 
+    Prop.t_b = Prop.prop_mass / Prop.mdot; % s 
 
     % Calculate Ctau at set ambient pressure
 

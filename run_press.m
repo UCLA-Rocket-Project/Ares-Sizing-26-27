@@ -18,8 +18,8 @@ function [Prop, Press] = run_press(Prop, params)
     ox_CdA   = CdA_series([params.ox_feed_CdA, params.inj_ox_CdA]); % m^2
 
     % find dP needed using mdot equation
-    fuel_dp = dP_from_CdA_mdot(fuel_CdA, Prop.mdot_fuel, params.fuel_density); % psi
-    ox_dp   = dP_from_CdA_mdot(ox_CdA, Prop.mdot_ox, params.ox_density); % psi
+    fuel_dp = dP_from_CdA_mdot(fuel_CdA, mdot_fuel_SI, params.fuel_density); % psi
+    ox_dp   = dP_from_CdA_mdot(ox_CdA, mdot_ox_SI, params.ox_density); % psi
 
     % add dP to chamber pressure to find tank pressure
     fuel_tank_press = fuel_dp + Prop.Pc; % psi
