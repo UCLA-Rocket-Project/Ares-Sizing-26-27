@@ -14,7 +14,7 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
     Pc = Prop.Pc; 
     Ctau_vac = Prop.Ctau_vac; 
     ctau_eff = params.Ctau_eff; 
-    prop_mass = params.prop_mass; 
+    prop_mass = Prop.prop_mass; 
     tb = Prop.t_b;
 
     g = 32.174; % ft/s^2
@@ -42,7 +42,7 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
         Ctau_t = Ctau_vac - eps * (Pamb / Pc);
 
         % Finds transient thrust as nozzle goes from under to overexpanded
-        T = mdot * cstar * cstar_eff * Ctau_t * ctau_eff;
+        T = mdot * cstar * cstar_eff * Ctau_t * ctau_eff; % lbf
 
         m = max(dry_mass, m - m_dot*dt);
         a = (T - m - 0.5 * Cd * rho * v^2*A)*g/m; % ft/s^2
