@@ -9,8 +9,8 @@
 function Prop = run_CEA(Prop, params)
 
     Engine = CEA('problem','rocket','equilibrium','fac','ac/at',params.ac_at,'o/f',Prop.OF,'p(psi)', Prop.Pc,'supersonic',Prop.eps,'reactants', ...
-             'fuel','C2H5OH(L)','wt%',params.eth_ratio*100,'t(k)',params.T_fuel_inlet,'fuel','H2O(L)','wt%',(1-params.eth_ratio)*100,'t(k)', ...
-            params.T_fuel_inlet,'oxid','O2(L)','wt%',100,'t(k)',params.T_ox_inlet,'output','transport','mks','end');
+             'fuel','C2H5OH(L)','wt%',params.eth_ratio*100,'t(k)',params.T_fuel,'fuel','H2O(L)','wt%',(1-params.eth_ratio)*100,'t(k)', ...
+            params.T_fuel,'oxid','O2(L)','wt%',100,'t(k)',params.T_ox,'output','transport','mks','end');
 
     % Calculate C_star
 

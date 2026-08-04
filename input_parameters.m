@@ -22,7 +22,8 @@ function p = input_parameters()
     p.water_density = py.CoolProp.CoolProp.PropsSI('D','T', p.T_fuel, 'P', p.P_fuel_tank, 'water'); % kg/m^3
     p.ethanol_density = py.CoolProp.CoolProp.PropsSI('D','T',p.T_fuel, 'P', p.P_fuel_tank, 'ethanol'); % kg/m^3
 
-    %density conversions happen inside run_press, CoolProp returns SI 
+    % run_press computes m^3 tank volume using kg/m^3 densities, then converts to L for get_PV_mel
+    
     p.eth_ratio = 0.75;
 
     p.fuel_density = mass_fraction(p.eth_ratio, p.ethanol_density, p.water_density); % kg/m3
