@@ -9,14 +9,14 @@
 
 %% Code
 PV_mel = get_PV_mel(prop_mass, OF, p_operating,press_v);
-if PV_mel == -1
+if isnumeric(PV_mel) && PV_mel == -1
     apogee = -1;
     results.apogee.append(apogee);
     results.length.append(158.5);
     fprintf("COPV not available for calculated pressurant volume of %.0f\n", press_v);
     % add statement about what prop parameters cause this
     return
-elseif PV_mel == -2
+elseif isnumeric(PV_mel) && PV_mel == -2
     apogee = -2;
     results.apogee.append(apogee);
     results.length.append(158.5);
@@ -27,13 +27,22 @@ end
 % Iterate through loads and dry mass until unchanging
 dry_mass = 120; % Initializing dry mass
 old_dryMass = 0; % Set old dry mass to zero for the first iteration
-while dry_mass > old_dryMass
+tol = 0.1;
+max_iter = 50;
+iter = 0;
+
+while abs(dry_mass - old_dryMass) > tol && iter < max_iter
+
     old_dryMass = dry_mass; % Update old dry mass
     % Calculate new dry mass based on current shock loads
     [f_drogue, f_main] = get_ShockLoads(dry_mass);
     recLoads = get_highestLoad(f_drogue, f_main, PV_mel);
     dry_mass = get_dryMass(recLoads,PV_mel); 
+    iter = iter + 1;
 end
+
+if iter == max_iter
+    warning("Dry mass did not converge within %d iterations for this prop config", max_iter);
 
 % Calculate apogee and vehicle length
 Cd_data = readmatrix('Cd_data.csv'); % ** need data
@@ -103,10 +112,10 @@ else
 end
 
 % ITS Axial
-if drogueLoad.ubt_axial > mainLoad.ubt_axial
-    load.ubt_axial = drogueLoad.ubt_axial;
+if drogueLoad.its_axial > mainLoad.its_axial
+    load.its_axial = drogueLoad.its_axial;
 else
-    load.ubt_axial = mainLoad.ubt_axial;
+    load.its_axial = mainLoad.its_axial;
 end
 
 % ITS Bending
