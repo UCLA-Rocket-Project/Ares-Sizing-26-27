@@ -49,10 +49,10 @@ writecell(col_names, filtered_csv_path);
 %% Sweep Ranges
 
 % CURRENTLY PLACEHOLDERS !!!!
-mass_dist = 85:5:100; %lbm
-OF_dist = linspace(1.0, 1.5, 6);
-Pc_dist = linspace(100, 440, 20); %psi
-eps_dist = linspace(1.5, 4, 10); 
+mass_dist = 85; %lbm
+OF_dist = 1.3;
+Pc_dist = [250, 300]; %psi
+eps_dist = 3.5; 
 
 it_ct = numel(mass_dist) * numel(OF_dist) * numel(Pc_dist) * numel(eps_dist);
 
@@ -151,7 +151,7 @@ for prop_mass = mass_dist
                     M_data = data(:,1);
                 else
                     data = readmatrix('MvsCd_data_100.csv');
-                    Cd_data = data(:,2);=
+                    Cd_data = data(:,2);
                     M_data = data(:,1); 
                 end
                 % Calculate apogee and vehicle length
@@ -171,7 +171,7 @@ for prop_mass = mass_dist
 
                 %% Row assembly and write
 
-                row = {prop_mass, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, Press.tank_press, Press.V_He, dry mass, PV_mel.fuel_l ...
+                row = {prop_mass, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, Press.tank_press, Press.V_He, dry_mass, PV_mel.fuel_l ...
                     PV_mel.ox_l, vehicle_length, apogee, fail_code};
 
                 buffer_all(end+1, :) = row;
@@ -185,7 +185,7 @@ for prop_mass = mass_dist
 
                 if mod(it, flush_every) ==0 || it == it_ct
                     if ~isempty(buffer_all)
-                        writecell(buffer_all, data-csv_path, 'WriteMode','append');
+                        writecell(buffer_all, data_csv_path, 'WriteMode','append');
                         buffer_all = {};
                     end
                     
@@ -200,7 +200,7 @@ for prop_mass = mass_dist
         end
     end
 end
-
+elapsed_time = toc;
 %% Optimized Output
 
 results_filtered = readtable(filtered_csv_path);
@@ -282,7 +282,7 @@ load.ubt_bending = max(drogueLoad.ubt_bending, mainLoad.ubt_bending);
 
 % LBT Axial
 
-load.lbt_axial = max(drogueLoad.lbt_axial, mainload.lbt_axial);
+load.lbt_axial = max(drogueLoad.lbt_axial, mainLoad.lbt_axial);
 
 % LBT Bending
 
