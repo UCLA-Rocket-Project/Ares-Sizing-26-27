@@ -25,7 +25,7 @@ function recLoads = get_recLoads(P, PV_mel,chute_type)
     
     % Divide the Rocket Into Several Tiny Pieces of Length dL
     N_divs = round(L_tot / dL);            % Total Divisions of Rocket
-    Locs = dL / 2 : dL : L_tot - dL / 2;   % Location of Each Division
+    Locs = linspace(dL / 2 , L_tot - dL / 2, N_divs);   % Location of Each Division
     
     % Define Mass Components in lbm (nothing above recovery coupler)
     % Taken from Pandora's MEL w/ PV commented out
