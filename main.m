@@ -12,12 +12,6 @@
 % outputs Press struct all imperial
 % get_PV_mel / get_ShockLoads / get_recLoads / get_dryMass / get_apogee are all imperial
 
-
-% Important notes: 
-% need Cd and Mach data to read in, currently storing apogee and length in 
-% struct called "results" for graphing at end, need to combine into overall 
-% function that iterates through prop parameters
-
 % Plotting results: graph of vehicle length and prop mass vs apogee
 
 %% Setup
@@ -32,9 +26,6 @@ end
 data_csv_path = fullfile(out_dir, 'output.csv'); % every iter
 filtered_csv_path = fullfile(out_dir, 'output_filtered.csv'); % for succesful iterations (meets all filters)
 log_path = fullfile(out_dir, 'log.txt');
-
-Cd_data = readmatrix('Cd_data.csv'); % ** need data
-M_data = readmatrix('M_data.csv'); % **need data
 
 params = input_paramters();
 
@@ -58,7 +49,7 @@ writecell(col_names, filtered_csv_path);
 %% Sweep Ranges
 
 % CURRENTLY PLACEHOLDERS !!!!
-mass_dist = linspace(40, 80, 5); %lbm
+mass_dist = 85:5:100; %lbm
 OF_dist = linspace(1.0, 1.5, 6);
 Pc_dist = linspace(100, 440, 20); %psi
 eps_dist = linspace(1.5, 4, 10); 
@@ -145,10 +136,24 @@ for prop_mass = mass_dist
 
                 end
 
-                
-
                 %% get_apogee 
-
+                if prop_mass == 85
+                    data = readmatrix('MvsCd_data_85.csv');
+                    Cd_data = data(:,2);
+                    M_data = data(:,1);
+                elseif prop_mass == 90
+                    data = readmatrix('MvsCd_data_90.csv');
+                    Cd_data = data(:,2);
+                    M_data = data(:,1);
+                elseif prop_mass == 95
+                    data = readmatrix('MvsCd_data_95.csv');
+                    Cd_data = data(:,2);
+                    M_data = data(:,1);
+                else
+                    data = readmatrix('MvsCd_data_100.csv');
+                    Cd_data = data(:,2);=
+                    M_data = data(:,1); 
+                end
                 % Calculate apogee and vehicle length
                 if fail_code == 0
                        apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass); % ft

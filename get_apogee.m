@@ -7,7 +7,7 @@
 
 function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
   
-     mdot = Prop.mdot; 
+    mdot = Prop.mdot; 
     cstar = Prop.C_star; 
     cstar_eff = params.Cstar_eff; 
     eps = Prop.eps; 
