@@ -272,6 +272,12 @@ function load = get_highestLoad(f_drogue, f_main,PV_mel)
 drogueLoad = get_recLoads(f_drogue,PV_mel,"drogue");
 mainLoad = get_recLoads(f_main,PV_mel,"main");
 
+% Lengths
+
+load.ubt_l = drogueLoad.ubt_l;
+load.lbt_l = drogueLoad.lbt_l;
+load.its_l = drogueLoad.its_l;
+
 % UBT Axial
 
 load.ubt_axial = max(drogueLoad.ubt_axial, mainLoad.ubt_axial);
