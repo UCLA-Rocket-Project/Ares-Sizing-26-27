@@ -170,8 +170,12 @@ for prop_mass = mass_dist
                     PV_mel.ox_l, vehicle_length, apogee, fail_code};
 
                 buffer_all(end+1, :) = row;
+                % every row,  gets periodically written and cleared every iteration to output.csv
+
                 if fail_code == 0
                     buffer_pass(end+1, :) = row; 
+                    % rows that pass the filters, written to filtered.csv
+                    
                 end
 
                 if mod(it, flush_every) ==0 || it == it_ct
