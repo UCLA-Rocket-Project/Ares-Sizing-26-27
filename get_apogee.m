@@ -40,10 +40,13 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
         Ctau_t = Ctau_vac - eps * (Pamb / Pc);
 
         % Finds transient thrust as nozzle goes from under to overexpanded
-        T = mdot * cstar * cstar_eff * Ctau_t * ctau_eff ; % lbm ft/s^2 (poundals)
+        T = mdot * cstar * cstar_eff * Ctau_t * ctau_eff / g; % lbm ft/s^2 (poundals) to lbf
+   
 
-        m = max(dry_mass, m - mdot*dt);
-        a = (T - m - 0.5 * Cd * rho * v^2*A)* g / m; % ft/s^2
+        m = max(dry_mass, m - mdot*dt); %lbm 
+        drag = 0.5 * Cd * rho * (v^2) * A; % lbf 
+        Force = (T - m - drag); % lbf
+        a = Force * g / m; % ft/s^2
         v = v + a*dt; % ft/s
         h = h + v*dt +0.5*a*dt^2; % ft
 
@@ -59,7 +62,7 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
 
     while v >= 0 % coasting
         [rho, temp] = get_air_properties(h);
-        rho = rho/16.018; % lb/ft^3
+        rho = ( rho/16.018 )/32.174; % slugs/ft^3
         v_s = sqrt(1.4*287*(temp+273.15))*3.281; % ft/s
         M = v/v_s;
         Cd = interp1(M_data,Cd_data, M,'linear','extrap');
