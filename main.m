@@ -27,7 +27,7 @@ data_csv_path = fullfile(out_dir, 'output.csv'); % every iter
 filtered_csv_path = fullfile(out_dir, 'output_filtered.csv'); % for succesful iterations (meets all filters)
 log_path = fullfile(out_dir, 'log.txt');
 
-params = input_paramters();
+params = input_parameters();
 
 col_names = {'prop_mass', 'OF', 'Pc', 'eps', 'mdot','thrust', 'Isp', 't_b','tank_press', 'V_He', 'dry_mass', ...
             'fuel_tank_length', 'ox_tank_length', 'vehicle_length', 'apogee', 'fail_code'};
@@ -171,7 +171,7 @@ for prop_mass = mass_dist
 
                 %% Row assembly and write
 
-                row = {prop_mass, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop. Isp, Prop.t_b, Press.tank_press, Press.V_He, dry mass, PV_mel.fuel_l ...
+                row = {prop_mass, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, Press.tank_press, Press.V_He, dry mass, PV_mel.fuel_l ...
                     PV_mel.ox_l, vehicle_length, apogee, fail_code};
 
                 buffer_all(end+1, :) = row;
