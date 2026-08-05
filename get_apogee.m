@@ -30,8 +30,8 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
     while m > dry_mass
         % Find Cd for current velocity
         [rho, temp, p] = get_air_properties(h);
-        Pamb = p * 0.145038; %kPa to psi
-        rho = rho/16.018; % lb/ft^3
+        Pamb = p * 0.145038; % kPa to psi
+        rho = rho/16.018/32.174; % slugs/ft^3
         v_s = sqrt(1.4*287*(temp+273.15))*3.281; % ft/s
         M = v/v_s;
         Cd = interp1(M_data,Cd_data, M,'linear','extrap'); % interpolate for Cd
@@ -77,16 +77,16 @@ function [rho,temp,p] = get_air_properties(h)
     h = h/3.281; % m
     if h < 11000
         T = 15.04 - 0.00649*h; % C
-        p = 101.29 *((T+273.15)/288.08)^5.256; % Kpa
+        p = 101.29 *((T+273.15)/288.08)^5.256; % kPa
     elseif h < 25000
         T = -56.46; % C
-        p = 22.65*exp(1.73-0.000157*h); % Kpa
+        p = 22.65*exp(1.73-0.000157*h); % kPa
     else
         T = -131.21 + 0.00299*h; % C
-        p = 2.488 * ((T+273.15)/216.6)^(-11.388); % Kpa
+        p = 2.488 * ((T+273.15)/216.6)^(-11.388); % kPa
     end
     rho = p/(0.2869*(T+273.15)); % kg/m^3
-    temp = T;
+    temp = T; % C
 end
 
 
