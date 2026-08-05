@@ -138,22 +138,27 @@ for prop_mass = mass_dist
 
                 %% get_apogee 
                 if prop_mass == 85
-                    data = readmatrix('MvsCd_data_85.csv');
+                    data = readmatrix(fullfile(base_dir, 'MvsCd_data_85.csv'));
                     Cd_data = data(:,2);
                     M_data = data(:,1);
                 elseif prop_mass == 90
-                    data = readmatrix('MvsCd_data_90.csv');
+                    data = readmatrix(fullfile(base_dir, 'MvsCd_data_90.csv'));
                     Cd_data = data(:,2);
                     M_data = data(:,1);
                 elseif prop_mass == 95
-                    data = readmatrix('MvsCd_data_95.csv');
+                    data = readmatrix(fullfile(base_dir, 'MvsCd_data_95.csv'));
                     Cd_data = data(:,2);
                     M_data = data(:,1);
                 else
-                    data = readmatrix('MvsCd_data_100.csv');
+                    data = readmatrix(fullfile(base_dir,'MvsCd_data_100.csv'));
                     Cd_data = data(:,2);
                     M_data = data(:,1); 
                 end
+
+                [M_data, uniq_idx] = unique(M_data);
+                Cd_data = Cd_data(uniq_idx);
+            
+
                 % Calculate apogee and vehicle length
                 if fail_code == 0
                        apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass); % ft
