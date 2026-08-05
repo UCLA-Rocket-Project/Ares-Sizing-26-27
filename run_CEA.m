@@ -53,8 +53,9 @@ function Prop = run_CEA(Prop, params)
     % Calculate thrust for Isp
 
     Thrust_ref_SI = mdot_SI * C_star_SI * params.Cstar_eff * Ctau_ref * params.Ctau_eff; % N
+    Prop.Thrust = Thrust_ref_SI * 0.224809; % N to lbf
 
     % Calculate specific impulse
 
-    Prop.Isp = (Thrust_ref_SI * 0.224809) / (Prop.mdot); % s , Thrust from N to lbf
+    Prop.Isp = Prop.Thrust / (Prop.mdot); % s
 end
