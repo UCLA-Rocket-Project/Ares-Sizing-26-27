@@ -49,10 +49,10 @@ writecell(col_names, filtered_csv_path);
 %% Sweep Ranges
 
 % CURRENTLY PLACEHOLDERS !!!!
-mass_dist = 85; %lbm
-OF_dist = 1.3;
-Pc_dist = [250, 300]; %psi
-eps_dist = 3.5; 
+mass_dist = 85:5:100; %lbm
+OF_dist = 1.2:0.02:1.4;
+Pc_dist = 100:20:600; %psi
+eps_dist = 2:0.5:5; 
 
 it_ct = numel(mass_dist) * numel(OF_dist) * numel(Pc_dist) * numel(eps_dist);
 
