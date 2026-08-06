@@ -34,20 +34,20 @@ function p = input_parameters()
 
     p.P_He_init = 4500; %psi COPV pressure
 
-    p.ox_feed_CdA = 4.435E-05 ; % m^2
+%     p.ox_feed_CdA = 4.435E-05 ; % m^2
 
-    p.fuel_feed_CdA = 6.8516E-05 ; % m^2
+  %  p.fuel_feed_CdA = 6.8516E-05 ; % m^2
 
-    p.channel_CdA = 0.000047624 ; % m^2
+   % p.channel_CdA = 0.000047624 ; % m^2
 
-    p.inj_ox_CdA = 0.00005837500098; % m^2
+ %   p.inj_ox_CdA = 0.00005837500098; % m^2
 
-    p.inj_f_CdA = 0.00008144; % m^2
+  %  p.inj_f_CdA = 0.00008144; % m^2
 
     % CdA conversions happen inside run_press
 
     p.ac_at = 4 ;
 
-    p.A_e = 11.34; % in^2
+    p.A_e = 13.59; % in^2 From FRR
 
 end
