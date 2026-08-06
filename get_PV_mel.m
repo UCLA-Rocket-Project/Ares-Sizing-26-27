@@ -98,6 +98,6 @@ PV_mel.fuel_m = 0.0975*pi*fuel_length*(r_o^2-r_i^2); % lbm
 PV_mel.ox_l = ox_length;
 PV_mel.ox_m = 0.0975*pi*ox_length*(r_o^2-r_i^2); % lbm
 PV_mel.cap_m = cap_mass;
-PV_mel.pv_m = PV_mel.fuel_m + PV_mel.ox_m + 2*PV_mel.cap_m + PV_mel.copv_m;
+PV_mel.pv_m = PV_mel.fuel_m + PV_mel.ox_m + 4*PV_mel.cap_m + PV_mel.copv_m;
 
 end
