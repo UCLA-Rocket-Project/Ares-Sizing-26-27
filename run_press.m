@@ -13,13 +13,23 @@ function [Prop, Press] = run_press(Prop, params)
 
     % Find tank pressure needed for given chamber pressure
  
-    % combine fuel and ox CdA
-    fuel_CdA = CdA_series([params.fuel_feed_CdA, params.channel_CdA, params.inj_f_CdA]); % m^2
-    ox_CdA   = CdA_series([params.ox_feed_CdA, params.inj_ox_CdA]); % m^2
+    % combine fuel and ox CdA (OLD)
+    % fuel_CdA = CdA_series([params.fuel_feed_CdA, params.channel_CdA, params.inj_f_CdA]); % m^2
+   %  ox_CdA   = CdA_series([params.ox_feed_CdA, params.inj_ox_CdA]); % m^2
 
-    % find dP needed using mdot equation
-    fuel_dp = dP_from_CdA_mdot(fuel_CdA, mdot_fuel_SI, params.fuel_density); % psi
-    ox_dp   = dP_from_CdA_mdot(ox_CdA, mdot_ox_SI, params.ox_density); % psi
+    % find dP needed using mdot equation (OLD)
+    % fuel_dp = dP_from_CdA_mdot(fuel_CdA, mdot_fuel_SI, params.fuel_density); % psi
+   %  ox_dp   = dP_from_CdA_mdot(ox_CdA, mdot_ox_SI, params.ox_density); % psi
+
+   injector_dP = 0.2 * Prop.Pc; % 20% stiffness for low freq instability
+
+   fuel_feed_dP = 20; % from Pandora flight system hotfire
+
+   ox_feed_dP = 14.4; % from Pandora flight system hotifre
+
+   fuel_dp = injector_dP + fuel_feed_dP;
+
+   ox_dp = injector_dP + ox_feed_dP;
 
     % add dP to chamber pressure to find tank pressure
     fuel_tank_press = fuel_dp + Prop.Pc; % psi
@@ -61,16 +71,16 @@ function [Prop, Press] = run_press(Prop, params)
 end
 
 
-%local helper functions
+%local helper functions (OLD)
 
-function CdA_total = CdA_series(CdA_list)
+ %function CdA_total = CdA_series(CdA_list)
     % combines CdAs in series (feed + channel + injector)
-    CdA_total = 1 / sqrt(sum(1 ./ (CdA_list.^2)));
-end
+  %  CdA_total = 1 / sqrt(sum(1 ./ (CdA_list.^2)));
+%end
 
-function dP = dP_from_CdA_mdot(CdA, mdot, rho)
+%function dP = dP_from_CdA_mdot(CdA, mdot, rho)
     % uses mdot = CdA*sqrt(2*rho*dP)
 
-    dP_pa = (mdot^2) / (2 * rho * CdA^2); % Pa
-    dP = dP_pa * 0.000145038; % Pa to psi
-end
+    %dP_pa = (mdot^2) / (2 * rho * CdA^2); % Pa
+    %dP = dP_pa * 0.000145038; % Pa to psi
+%end
