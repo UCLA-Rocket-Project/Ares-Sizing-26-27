@@ -23,9 +23,9 @@ function [Prop, Press] = run_press(Prop, params)
 
    injector_dP = 0.2 * Prop.Pc; % 20% stiffness for low freq instability
 
-   fuel_feed_dP = 20; % from Pandora flight system hotfire
+   fuel_feed_dP = 20 + 20; % from Pandora flight system hotfire + conservative overhead (can be orificed) 
 
-   ox_feed_dP = 14.4; % from Pandora flight system hotifre
+   ox_feed_dP = 14.4 + 20; % from Pandora flight system hotifre + conservative overhead (can be orificed) 
 
    fuel_dp = injector_dP + fuel_feed_dP;
 
