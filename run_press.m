@@ -2,6 +2,9 @@
 
 % computes required tank pressure for given chamber pressure input
 % computes Helium volume needed
+% Uses stiffness + measured flight system dP now, instead of using CdAs and mdot equation
+% conservative feed loss overhead added, can orifice as needed 
+% assume 20% stiffness (not heritage 30%, high stiffness was due to manufacturing, not planned)
 
 % Inputs:  Prop (OF, Pc, mdot, mdot_fuel, mdot_ox), params
 % Outputs: Press.tank_press [psi], Press.V_He [m^3]
