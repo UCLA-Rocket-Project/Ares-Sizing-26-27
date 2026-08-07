@@ -38,6 +38,8 @@ function p = input_parameters()
 
     p.Dome_orifice_area = 2.677414E-5; % m^2 
 
+    p.T_N2 = 293; %K
+
 %     p.ox_feed_CdA = 4.435E-05 ; % m^2
 
   %  p.fuel_feed_CdA = 6.8516E-05 ; % m^2
