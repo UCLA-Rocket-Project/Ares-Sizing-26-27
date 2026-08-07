@@ -29,6 +29,7 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   % Initialize outputs
   out.max_domes = 0;
   out.t_cross = 0;
+  out.t_blowdown = 0;
   status = 0; % 0: Success
 
   R_helium = 2077; % J/(kg*K), specific gas constant for Helium
@@ -218,4 +219,6 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   % Pack structure output
   out.max_domes = max_domes;
   out.t_cross = t_cross;
+  out.t_blowdown = t;
+  
 end

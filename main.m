@@ -256,6 +256,39 @@ else
     disp(log);
 end
 
+%% Pressurant Blowdown Sizing
+
+% only ran once for optimum combo
+
+best_prop_mass = results_filtered.prop_mass(opt_idx);
+best_OF = results_filtered.OF(opt_idx);
+best_Pc = results_filtered.Pc(opt_idx);
+best_eps = results_filtered.eps(opt_idx);
+
+% Re-run the pipeline once for this combo to get the full Prop,Press, PV_mel structs
+
+Prop = struct('OF', best_OF, 'Pc', best_Pc, 'eps', best_eps, 'prop_mass', best_prop_mass);
+Prop = run_CEA(Prop, params);
+[Prop, Press] = run_press(Prop, params);
+PV_mel = get_PV_mel(best_prop_mass, best_OF, Press.tank_press, Press.V_He);
+
+[flight_out, flight_status] = get_press_flight(Prop, Press, PV_mel, params);
+[ground_out, ground_status] = get_press_ground(Prop, Press, params);
+
+fprintf('PRESSURANT SIZING RESULTS (optimal combo)\n');
+
+fprintf('-- Flight (COPV / Helium) --\n');
+fprintf('Status: %d (0 = OK, -1 = COPV drops below tank pressure before burn ends, -2 = insufficient helium mass)\n', flight_status);
+fprintf('Domes needed: %d\n', flight_out.max_domes);
+fprintf('Time COPV stays above tank pressure: %.4f s\n\n', flight_out.t_cross);
+fprintf('Full COPV time, w/ blowdown: %.4f s\n\n', flight_out.t_blowdown)
+
+fprintf('-- Ground (GN2 K-Bottles) --\n');
+fprintf('Status: %d (0 = OK, -1 = bottle reaches tank pressure before burn ends)\n', ground_status);
+fprintf('Bottles needed: %d\n', ground_out.bottle_number);
+fprintf('Domes needed: %d\n', ground_out.max_domes);
+fprintf('Blowdown time: %.4f s\n', ground_out.t_blowdown);
+
 %% Plotting
 
 if ~isempty(results_filtered) 
