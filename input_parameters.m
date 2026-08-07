@@ -34,6 +34,10 @@ function p = input_parameters()
 
     p.P_He_init = 4500; %psi COPV pressure
 
+    p.GN2_bottle_orifice_area = 2.027E-5; % m^2 
+
+    p.Dome_orifice_area = 2.677414E-5; % m^2 
+
 %     p.ox_feed_CdA = 4.435E-05 ; % m^2
 
   %  p.fuel_feed_CdA = 6.8516E-05 ; % m^2
