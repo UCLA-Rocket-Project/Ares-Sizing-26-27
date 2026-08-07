@@ -296,6 +296,10 @@ best_dry_mass = results_filtered.dry_mass(opt_idx);
 recLoads = get_highestLoad(f_drogue, f_main, PV_mel);
 [dry_mass, tube_masses] = get_dryMass(recLoads, PV_mel);
 
+fprintf('UBT mass: %.2f lb\n', tube_masses.ubt_m);
+fprintf('LBT mass: %.2f lb\n', tube_masses.lbt_m);
+fprintf('ITS mass: %.2f lb\n', tube_masses.its_m);
+
 
 %% Plotting
 
