@@ -51,7 +51,7 @@ for t = 1:length(tank_thicknesses)
         break
     end
 
-    if t == tank_thicknesses(length(tank_thicknesses))
+    if t == length(tank_thicknesses)
         PV_mel = -2; % Tanks unable to withstand pressure
         return
     end
