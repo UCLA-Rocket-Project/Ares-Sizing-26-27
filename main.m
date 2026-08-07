@@ -51,8 +51,8 @@ writecell(col_names, filtered_csv_path);
 % CURRENTLY PLACEHOLDERS !!!!
 mass_dist = 85:5:100; %lbm
 OF_dist = 1.2:0.02:1.4;
-Pc_dist = 100:20:600; %psi
-eps_dist = 2:0.5:5; 
+Pc_dist = 200:10:600; %psi
+eps_dist = 3:0.5:5; 
 
 it_ct = numel(mass_dist) * numel(OF_dist) * numel(Pc_dist) * numel(eps_dist);
 
@@ -271,6 +271,38 @@ if ~isempty(results_filtered)
 
 end
 
+tol = 1e-6; % float compare tolerance for matching fixed sweep values
+
+% 1-4: fixed eps=5, prop_mass=100, Pc vs OF vs {mdot, t_b, apogee, V_He}
+plot_slice(results_filtered, 'Pc','OF','mdot',  {'eps','prop_mass'}, [5,100], tol, ...
+  'mdot vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','mdot (lbm/s)');
+plot_slice(results_filtered, 'Pc','OF','t_b',   {'eps','prop_mass'}, [5,100], tol, ...
+  'Burn Time vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','t\_b (s)');
+plot_slice(results_filtered, 'Pc','OF','apogee', {'eps','prop_mass'}, [5,100], tol, ...
+  'Apogee vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','Apogee (ft)');
+plot_slice(results_filtered, 'Pc','OF','V_He',  {'eps','prop_mass'}, [5,100], tol, ...
+  'V\_He vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','V\_He (L)');
+
+% 5: fixed eps=5, OF=1.38, Pc vs prop_mass vs V_He
+plot_slice(results_filtered, 'Pc','prop_mass','V_He', {'eps','OF'}, [5,1.38], tol, ...
+  'V\_He vs Pc & Prop Mass (eps=5, OF=1.38)', 'Pc (psi)','Prop Mass (lb)','V\_He (L)');
+
+% 6: fixed prop_mass=100, Pc vs eps vs mdot, layered over OF = 1.2, 1.3, 1.38
+plot_layered_slice(results_filtered, 'Pc','eps','mdot', 'prop_mass', 100, tol, ...
+  'OF', [1.2, 1.3, 1.38], ...
+  'mdot vs Pc & eps, layered by OF (prop\_mass=100)', 'Pc (psi)','eps','mdot (lbm/s)');
+
+% 7-10: fixed prop_mass=100, OF=OF_fixed, Pc vs eps vs {mdot, t_b, apogee, V_He}
+OF_fixed = 1.38; % PLACEHOLDER -- set to whatever fixed OF you actually want for 7-10
+plot_slice(results_filtered, 'Pc','eps','mdot',  {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+  sprintf('mdot vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','mdot (lbm/s)');
+plot_slice(results_filtered, 'Pc','eps','t_b',   {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+  sprintf('Burn Time vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','t\_b (s)');
+plot_slice(results_filtered, 'Pc','eps','apogee', {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+  sprintf('Apogee vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','Apogee (ft)');
+plot_slice(results_filtered, 'Pc','eps','V_He',  {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+  sprintf('V\\_He vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','V\_He (L)');
+
 %% Local Functions
 
 % Returns struct with highest equivalent axial load and highest bending
@@ -309,5 +341,50 @@ load.its_axial = max(drogueLoad.its_axial, mainLoad.its_axial);
 
 load.its_bending = max(drogueLoad.its_bending, mainLoad.its_bending);
 
+
+% 3d plotter
+
 end
 
+function plot_slice(T, xcol, ycol, zcol, fixed_cols, fixed_vals, tol, ttl, xlab, ylab, zlab)
+  mask = true(height(T),1);
+  for k = 1:numel(fixed_cols)
+    mask = mask & abs(T.(fixed_cols{k}) - fixed_vals(k)) < tol;
+  end
+  Tsub = T(mask,:);
+
+  figure;
+  if isempty(Tsub)
+    title([ttl ' -- no matching rows']);
+    return
+  end
+  scatter3(Tsub.(xcol), Tsub.(ycol), Tsub.(zcol), 25, Tsub.(zcol), 'filled');
+  xlabel(xlab); ylabel(ylab); zlabel(zlab);
+  title(ttl);
+  colorbar; grid on; view(45,25);
+end
+
+
+%3d plotter, layered
+
+function plot_layered_slice(T, xcol, ycol, zcol, fixed_col, fixed_val, tol, layer_col, layer_vals, ttl, xlab, ylab, zlab)
+  mask = abs(T.(fixed_col) - fixed_val) < tol;
+  Tsub = T(mask,:);
+
+  figure; hold on;
+  colors = lines(numel(layer_vals));
+  legend_labels = strings(numel(layer_vals),1);
+  for k = 1:numel(layer_vals)
+    layer_mask = abs(Tsub.(layer_col) - layer_vals(k)) < tol;
+    Tl = Tsub(layer_mask,:);
+    if isempty(Tl)
+      continue
+    end
+    scatter3(Tl.(xcol), Tl.(ycol), Tl.(zcol), 25, colors(k,:), 'filled');
+    legend_labels(k) = sprintf('%s = %.2f', layer_col, layer_vals(k));
+  end
+  xlabel(xlab); ylabel(ylab); zlabel(zlab);
+  title(ttl);
+  legend(legend_labels(legend_labels ~= ""), 'Location','best');
+  grid on; view(45,25); hold off;
+end
