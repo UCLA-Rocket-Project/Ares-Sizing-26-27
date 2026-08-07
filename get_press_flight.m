@@ -24,7 +24,7 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   eth_ratio     = params.eth_ratio;
   T_fuel        = params.T_fuel;        % K
   T_ox        = params.T_ox;        % K
-  T_helium      = params.T_he;      % K initial COPV temp
+  T_helium      = params.T_He;      % K initial COPV temp
 
   % Initialize outputs
   out.max_domes = 0;
@@ -220,5 +220,5 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   out.max_domes = max_domes;
   out.t_cross = t_cross;
   out.t_blowdown = t;
-  
+
 end
