@@ -5,7 +5,7 @@
 % Inputs: Struct with max recovery loads, PV_mel
 % Output: Dry mass of the vehicle
 
-function dry_mass = get_dryMass(recLoads,PV_mel)
+function [dry_mass, tube_masses] = get_dryMass(recLoads,PV_mel)
 
 % Determine UBT layer number
 n = 6;
@@ -46,6 +46,10 @@ its_n = n;
 ubt_m = get_tubeMass(ubt_n,recLoads.ubt_l);
 lbt_m = get_tubeMass(lbt_n,recLoads.lbt_l);
 its_m = get_tubeMass(its_n,recLoads.its_l);
+
+tube_masses.ubt_m = ubt_m;
+tube_masses.lbt_m = lbt_m;
+tube_masses.its_m = its_m;
 
 % Dry mass of Pandora minus all PV things and all carbon tubes = 116 lb
 dry_mass = ubt_m + lbt_m + its_m + PV_mel.pv_m + 120; % lb
