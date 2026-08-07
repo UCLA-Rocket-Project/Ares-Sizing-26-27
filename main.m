@@ -338,7 +338,7 @@ plot_layered_slice(results_filtered, 'Pc','eps','mdot', 'prop_mass', 100, tol, .
   'mdot vs Pc & eps, layered by OF (prop\_mass=100)', 'Pc (psi)','eps','mdot (lbm/s)');
 
 % 7-10: fixed prop_mass=100, OF=OF_fixed, Pc vs eps vs {mdot, t_b, apogee, V_He}
-OF_fixed = 1.38; % PLACEHOLDER -- set to whatever fixed OF you actually want for 7-10
+OF_fixed = 1.38; 
 plot_slice(results_filtered, 'Pc','eps','mdot',  {'prop_mass','OF'}, [100,OF_fixed], tol, ...
   sprintf('mdot vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','mdot (lbm/s)');
 plot_slice(results_filtered, 'Pc','eps','t_b',   {'prop_mass','OF'}, [100,OF_fixed], tol, ...
