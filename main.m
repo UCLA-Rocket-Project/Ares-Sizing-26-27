@@ -289,6 +289,14 @@ fprintf('Bottles needed: %d\n', ground_out.bottle_number);
 fprintf('Domes needed: %d\n', ground_out.max_domes);
 fprintf('Blowdown time: %.4f s\n', ground_out.t_blowdown);
 
+%% Tube mass for optimum combo to back calc layers
+
+best_dry_mass = results_filtered.dry_mass(opt_idx);
+[f_drogue, f_main] = get_ShockLoads(best_dry_mass);
+recLoads = get_highestLoad(f_drogue, f_main, PV_mel);
+[dry_mass, tube_masses] = get_dryMass(recLoads, PV_mel);
+
+
 %% Plotting
 
 if ~isempty(results_filtered) 
