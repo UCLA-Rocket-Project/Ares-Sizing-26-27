@@ -21,7 +21,7 @@ function recLoads = get_recLoads(P, PV_mel,chute_type)
     dL = 0.01;      % Tiny Division size [in]
     
     %% Define Beam Length and Mass Distribution
-    L_tot = 158.5 + PV_mel.ox_l + PV_mel.fuel_l; % Pandora length + tanks, may want to add extra to length of pandora for safety
+    L_tot = 160 + PV_mel.ox_l + PV_mel.fuel_l; % Pandora length + tanks, can be longer than vehicle
     
     % Divide the Rocket Into Several Tiny Pieces of Length dL
     N_divs = round(L_tot / dL);            % Total Divisions of Rocket
@@ -39,15 +39,9 @@ function recLoads = get_recLoads(P, PV_mel,chute_type)
     masses = defMass(masses, 35.11, 48.16, dL, 5.9184); %Upper Body Tube
     masses = defMass(masses, 39.11, 0.65, dL, 1.449); %Lower Recovery Bulkhead + Pin + Fasteners
     masses = defMass(masses, 45.61, 22.44, dL, 1.15); %Pressurant Tank Centering Rings
-    % masses = defMass(masses, 45.61, 22.44, dL, 15.96); %Pressurant Tank
     masses = defMass(masses, 68.05, 10.31, dL, 8.8725); %Pressurant Bay Plumbing
     masses = defMass(masses, 74, 75, dL, 1.15); %Fairing
     masses = defMass(masses, 74, 75, dL, 1.035); %Raceway Plumbing
-    % masses = defMass(masses, 79.27, 4, dL, 2.814); %Hemi + Skirt (Upper LOX) + Nut Holders
-    % masses = defMass(masses, 83.27, 22.3, dL, 7.35); %LOx Tank (No Hemi)
-    % masses = defMass(masses, 83.27, 15.25, dL, 10.395); %ITS Joint + Hemis + Nut Holders
-    % masses = defMass(masses, 120.82, 25.2, dL, 8.19); %Fuel Tank (No Hemi)
-    % masses = defMass(masses, 146.02, 4, dL, 2.9085); %Fuel Skirt + Hemi (Singular) + Nut Holders
     masses = defMass(masses, 83.27+15.25+PV_mel.ox_l+PV_mel.fuel_l, 37, dL, 4.053); %Lower Body Tube
     masses = defMass(masses, 83.27+15.25+PV_mel.ox_l+PV_mel.fuel_l+4, 23, dL, 15.12); %Engine Bay Plumbing
     masses = defMass(masses, 83.27+15.25+PV_mel.ox_l+PV_mel.fuel_l+4+23+4, 0.5, dL, 0.42); %Thrust Bulkhead + Fasteners
@@ -61,7 +55,6 @@ function recLoads = get_recLoads(P, PV_mel,chute_type)
     masses = defMass(masses, 68.05-PV_mel.copv_l, PV_mel.copv_l, dL, PV_mel.copv_m); %Pressurant Tank
     masses = defMass(masses, 79.27, 4, dL, PV_mel.cap_m); % Upper Lox End Cap
     masses = defMass(masses, 83.27, PV_mel.ox_l, dL, PV_mel.ox_m); % Lox Tank
-    % note that end cap mass is constant across trials
     masses = defMass(masses, 83.27+PV_mel.ox_l, 15.25, dL, 10.395); % ITS + Lower Lox and Upper Fuel End Caps
     masses = defMass(masses, 83.27+PV_mel.ox_l+15.25, PV_mel.fuel_l, dL, PV_mel.fuel_m); % Fuel Tank
     masses = defMass(masses, 83.27+15.25+PV_mel.ox_l+PV_mel.fuel_l, 4, dL, PV_mel.cap_m); % Lower Fuel End Cap
@@ -75,8 +68,6 @@ function recLoads = get_recLoads(P, PV_mel,chute_type)
     
     %% Calculate CG and MoI
     % Mass and MoI at Each Location
-    MoIs = zeros(1,N_divs);          % Moment of inertia of each section about its center [lbm*in²]
-    
     M_tot = sum(masses);
     CG_numerator = dot(Locs, masses);
     CG_loc = CG_numerator / M_tot;              % Calculate CG location
@@ -121,7 +112,7 @@ function recLoads = get_recLoads(P, PV_mel,chute_type)
     
     %% Calculate P_eq at Each Station
     r = 4;                    % Rocket Radius [in]
-    P_eq = abs(2 * Moment / (r / in2ft));
+    P_eq = abs(2 * (Moment*12) / r);
     
     if abs(P_eq) >= 0.0001
         P_eq = P_eq + P_axial;

@@ -20,7 +20,7 @@ if press_v > copv_volumes(length(copv_volumes))
 end
 
 for i = 1:length(copv_volumes)
-    if copv_volumes(i) > press_v
+    if copv_volumes(i) >= press_v
         PV_mel.copv_v = copv_volumes(i);
         PV_mel.copv_m = copv_masses(i);
         PV_mel.copv_l = copv_lengths(i);
@@ -31,15 +31,14 @@ end
 % Proceed to check tank thickness based on MEOP (return -2 if not possible)
 
 % Constants
-S_y = 35000; % yield strength of Aluminum 6061-T6, psi
+S_y = 35000; % yield strength of Aluminum 6061-T6 according to MMPDS, psi
 r_o = 4; % in
 FS_y = 1.25; % FOS Yield for pressure vessels
-% FF = 1.15; % Fitting factor, currently ignoring
+% FF = 1.15; % Fitting factor, ignoring
 % E = 1; % Weld efficiency factor (can ignore)
 
-tank_thicknesses = [0.125, 0.25, 0.375]; % in, 
+tank_thicknesses = [0.125, 0.25, 0.375]; % in
 % Can be found on OnlineMetals, Speedy metals, Grainger, and BuyMetal
-% ^^ need to research available tubes to make array
 
 for t = 1:length(tank_thicknesses)
     r_i = r_o - tank_thicknesses(t);

@@ -8,7 +8,7 @@
 function [dry_mass, tube_masses] = get_dryMass(recLoads,PV_mel)
 
 % Determine UBT layer number
-n = 6;
+n = 8;
 ubt_MOS_buckling = get_Buckling(recLoads.ubt_l,n,recLoads.ubt_axial);
 ubt_MOS_bending = get_Bending(n,recLoads.ubt_bending);
 while ubt_MOS_buckling <= 0 || ubt_MOS_bending <= 0
@@ -19,7 +19,7 @@ end
 ubt_n = n;
 
 % Determine LBT layer number
-n = 6;
+n = 8;
 lbt_MOS_buckling = get_Buckling(recLoads.lbt_l,n,recLoads.lbt_axial);
 lbt_MOS_bending = get_Bending(n,recLoads.lbt_bending);
 while lbt_MOS_buckling <= 0 || lbt_MOS_bending <= 0
@@ -30,7 +30,7 @@ end
 lbt_n = n;
 
 % Determine ITS layer number
-n = 6;
+n = 12;
 its_MOS_buckling = get_Buckling(recLoads.its_l,n,recLoads.its_axial);
 its_MOS_bending = get_Bending(n,recLoads.its_bending);
 its_MOS_bearing = get_Bearing(n,recLoads.its_axial);
@@ -97,11 +97,11 @@ FS_u = 1.75;
 MOS_bearing = S_br_CF/(FS_u*bearing_stress)-1;
 end
 
-% Mass (lb) of a tube (input # of layers, tube length)
+% Mass (lbm) of a tube (input # of layers, tube length)
 function mass = get_tubeMass(n,l)
 density = 1.4/27.68; % lb/in^3
 r_i = 4; % in
 r_o = 4 + 0.0083*n; % in
 V = pi*(r_o^2-r_i^2)*l; % in^3
-mass = V*density; % lb
+mass = V*density; % lbm
 end
