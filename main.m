@@ -256,7 +256,6 @@ else
     disp(log);
 end
 
-%% Pressurant Blowdown Sizing
 
 % only ran once for optimum combo
 
@@ -272,22 +271,25 @@ Prop = run_CEA(Prop, params);
 [Prop, Press] = run_press(Prop, params);
 PV_mel = get_PV_mel(best_prop_mass, best_OF, Press.tank_press, Press.V_He);
 
-[flight_out, flight_status] = get_press_flight(Prop, Press, PV_mel, params);
-[ground_out, ground_status] = get_press_ground(Prop, Press, params);
 
-fprintf('PRESSURANT SIZING RESULTS (optimal combo)\n');
+%% Press sizing (WIP)
 
-fprintf('-- Flight (COPV / Helium) --\n');
-fprintf('Status: %d (0 = OK, -1 = COPV drops below tank pressure before burn ends, -2 = insufficient helium mass)\n', flight_status);
-fprintf('Domes needed: %d\n', flight_out.max_domes);
-fprintf('Time COPV stays above tank pressure: %.4f s\n\n', flight_out.t_cross);
-fprintf('Full COPV time, w/ blowdown: %.4f s\n\n', flight_out.t_blowdown)
+%[flight_out, flight_status] = get_press_flight(Prop, Press, PV_mel, params);
+%[ground_out, ground_status] = get_press_ground(Prop, Press, params);
 
-fprintf('-- Ground (GN2 K-Bottles) --\n');
-fprintf('Status: %d (0 = OK, -1 = bottle reaches tank pressure before burn ends)\n', ground_status);
-fprintf('Bottles needed: %d\n', ground_out.bottle_number);
-fprintf('Domes needed: %d\n', ground_out.max_domes);
-fprintf('Blowdown time: %.4f s\n', ground_out.t_blowdown);
+%fprintf('PRESSURANT SIZING RESULTS (optimal combo)\n');
+
+%fprintf('-- Flight (COPV / Helium) --\n');
+%%fprintf('Status: %d (0 = OK, -1 = COPV drops below tank pressure before burn ends, -2 = insufficient helium mass)\n', flight_status);
+%fprintf('Domes needed: %d\n', flight_out.max_domes);
+%%fprintf('Time COPV stays above tank pressure: %.4f s\n\n', flight_out.t_cross);
+%fprintf('Full COPV time, w/ blowdown: %.4f s\n\n', flight_out.t_blowdown)
+
+%fprintf('-- Ground (GN2 K-Bottles) --\n');
+%fprintf('Status: %d (0 = OK, -1 = bottle reaches tank pressure before burn ends)\n', ground_status);
+%fprintf('Bottles needed: %d\n', ground_out.bottle_number);
+%%fprintf('Domes needed: %d\n', ground_out.max_domes);
+%fprintf('Blowdown time: %.4f s\n', ground_out.t_blowdown);
 
 %% Tube mass for optimum combo to back calc layers
 
@@ -300,6 +302,23 @@ fprintf('UBT mass: %.2f lb\n', tube_masses.ubt_m);
 fprintf('LBT mass: %.2f lb\n', tube_masses.lbt_m);
 fprintf('ITS mass: %.2f lb\n', tube_masses.its_m);
 
+%% RSE File Gen
+
+if best_prop_mass == 85
+data = readmatrix(fullfile(base_dir, 'MvsCd_data_85.csv'));
+elseif best_prop_mass == 90
+data = readmatrix(fullfile(base_dir, 'MvsCd_data_90.csv'));
+elseif best_prop_mass == 95
+data = readmatrix(fullfile(base_dir, 'MvsCd_data_95.csv'));
+else
+data = readmatrix(fullfile(base_dir, 'MvsCd_data_100.csv'));
+end
+Cd_data = data(:,2);
+M_data = data(:,1);
+[M_data, uniq_idx] = unique(M_data);
+Cd_data = Cd_data(uniq_idx);
+
+get_RSE_files(Prop, params, dry_mass, PV_mel, Cd_data, M_data, "Ares", "UCLA_Rocket_Project", out_dir);
 
 %% Plotting
 
