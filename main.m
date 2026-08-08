@@ -48,7 +48,7 @@ writecell(col_names, filtered_csv_path);
 
 %% Sweep Ranges
 
-% CURRENTLY PLACEHOLDERS !!!!
+% 
 mass_dist = 85:5:100; %lbm
 OF_dist = 1.2:0.02:1.4;
 Pc_dist = 200:10:600; %psi
