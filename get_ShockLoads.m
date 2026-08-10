@@ -1,4 +1,4 @@
-% get_recLoads
+% get_ShockLoads
 
 % Script from anthony, just made it a function with our desired outputs
 
