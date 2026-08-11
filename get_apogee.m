@@ -18,7 +18,7 @@ function apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass)
 
     g = 32.174; % ft/s^2
     dt = 0.01; % s
-    h0 = 3000; % ft
+    h0 = 2100; % ft
     v_oftr = 100; % ft/s
     A = pi*16/144; % ft^2
     m = dry_mass + prop_mass; % lb
