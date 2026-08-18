@@ -67,58 +67,49 @@ function [out, status] = get_press_ground(Prop, Press, params)
   fprintf('Number of GN2 bottles needed: %d\n', bottle_number);
 
   % Transient blowdown for ground
-  % track bottle pressure by assuming choked flow at bottle
+  
+    rho_nitrogen_at_GN2_pressure = py.CoolProp.CoolProp.PropsSI('D', 'T', T_nitrogen, 'P', GN2_pressure, 'nitrogen'); % kg/m^3
+     bottle_volume = 11 / rho_nitrogen_at_GN2_pressure; % m^3
+     total_bottle_volume = bottle_number * bottle_volume; % m^3, all bottles in the bank
 
-  bottle_p = zeros(1,1);
-  bottle_p(1) = GN2_pressure; % Pa
-  delta_t = 0.01;       % s
-  m_gas_old = 11;       % kg
-  T_old = T_nitrogen; %K
-  t = 0;              % s
-  vdot_array = [];    % m^3/s
-  gamma_array = [];
-  temp_array = []; 
-  temp_array(1) = T_nitrogen; %K
-  stop_pressure = tank_pressure; % Pa
-  bottle_
+    rho_N2_ullage = py.CoolProp.CoolProp.PropsSI('D','P', tank_pressure, 'S', s_initial, 'nitrogen'); % kg/m^3
 
-  i = 1;
-  while bottle_p(i) > stop_pressure
+    prop_mass_kg = Prop.prop_mass / 2.20462; % lbm to kg
+    fuel_mass_t = prop_mass_kg / (1 + OF); 
+    ox_mass_t = prop_mass_kg - fuel_mass_t; % kg
 
-    % find gamma
+    V_fuel_ullage_t = fuel_volume - fuel_mass_t / rho_fuel;
+    V_ox_ullage_t = ox_volume - ox_mass_t / rho_ox;
+
+    m_bottles_initial = bottle_number * 11; % kg
+    m_total = m_bottles_initial + rho_N2_ullage * V_fuel_ullage_t + rho_N2_ullage * V_ox_ullage_t;
+
+% Loop
+
+    rho_old = 11 / bottle_volume; % kg/m^
+    T_old = T_nitrogen;
+    bottle_p = GN2_pressure;
+
+    while fuel_mass_t > 0 && ox_mass_t > 0
+     fuel_mass_t = fuel_mass_t - mdot_fuel*delta_t;
+    ox_mass_t = ox_mass_t - mdot_ox*delta_t;
+    if fuel_mass_t <= 0 || ox_mass_t <= 0, break; end
+
+     V_fuel_ullage_t = fuel_volume - fuel_mass_t/rho_fuel;
+     V_ox_ullage_t = ox_volume - ox_mass_t/rho_ox;
+
+     m_ullage_now = rho_N2_ullage * V_fuel_ullage_t + rho_N2_ullage * V_ox_ullage_t;
+     m_bottles_now = m_total - m_ullage_now;
+     if m_bottles_now <= 0, break; end
+
+    rho_new = m_bottles_now / total_bottle_volume;
+     T_new = T_old * (rho_new/rho_old)^(polytropic_n - 1);
+    bottle_p = py.CoolProp.CoolProp.PropsSI('P','D',rho_new,'T',T_new,'nitrogen');
+
+     rho_old = rho_new; T_old = T_new;
+
+    end
     
-    Cp = py.CoolProp.CoolProp.PropsSI('Cpmass', 'T', T_old, 'P', bottle_p(i), 'nitrogen'); % J/(kg*K)
-    Cv = py.CoolProp.CoolProp.PropsSI('Cvmass', 'T', T_old, 'P', bottl_p(i), 'nitrogen'); % J/(kg*K)
-    gamma = Cp / Cv;
-    gamma_array(i) = gamma;
-
-    % find density
-
-    rho_nitrogen_t = py.CoolProp.CoolProp.PropsSI('D', 'T', T_old, 'P', bottle_p(i), 'nitrogen'); % kg/m^3
-
-    % choked flow thru bottle outlet
-    mdot_gas = ((A * bottle_p(i) * sqrt(gamma)) / (sqrt(T_old) * sqrt(R_nitrogen))) * ((gamma + 1) / 2)^(-(gamma + 1) / (2 * (gamma - 1))); % kg/s
-
-    vdot_gas_t = mdot_gas / rho_nitrogen_t; % m^3/s
-    vdot_array(i) = vdot_gas_t;
-
-    % subtract gas lost this step & update pressure & temp
-
-    mass_lost = mdot_gas * delta_t; % kg
-    m_gas_new = m_gas_old - mass_lost;
-
-    bottle_p(i+1) = bottle_p(i) * ((m_gas_new / m_gas_old) ^ gamma);
-    T_new = T_old * ((m_gas_new / m_gas_old) ^ (gamma - 1));
-
-    m_gas_old = m_gas_new;
-    T_old = T_new;
-    t = t + delta_t;
-    i = i + 1;
-
-  end
-
-  fprintf('Time for pressurant bottle to reach tank pressure: %.4f seconds\n', t);
-
   % Duration check
   % checks if the bottle actually last whole burn
 
