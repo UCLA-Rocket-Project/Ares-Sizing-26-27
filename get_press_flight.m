@@ -4,7 +4,6 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
 % Pressurant Sizing Script for Helium / Flight COPV 
 
 % static mass balance to check if 12L holds enough Helium mass
-% assumes choked flow at COPV outlet, checks if vdot_gas > vdot_prop
 % assumes choked flow at dome, checks if vdot_gas > vdot_prop, adds to dome # if not
 
 % added check that time for bottle from 4.5k to tank pressure > burn time
@@ -25,6 +24,7 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   T_fuel        = params.T_fuel;        % K
   T_ox        = params.T_ox;        % K
   T_helium      = params.T_He;      % K initial COPV temp
+  polytropic_n = params.polytropic_n; 
 
   % Initialize outputs
   out.max_domes = 0;
@@ -48,12 +48,10 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   vdot_ox = mdot_ox / rho_ox;
   vdot_tot = vdot_fuel + vdot_ox; % m^3/s
 
-  % calc burn time
 
-  prop_mass = (fuel_volume * rho_fuel) + (ox_volume * rho_ox);
-  burn_time = prop_mass / mdot; % s
 
-  % static mass balance: checks if 12L COPV can hold enough helium mass to fill tanks (boolean)
+  %% static mass balance
+  % checks if 12L COPV can hold enough helium mass to fill tanks (boolean)
   % uses worst case density after isnetropic cooling
 
   s_initial = py.CoolProp.CoolProp.PropsSI('S', 'T', T_helium, 'P', COPV_pressure, 'helium'); % J/(kg*K)
@@ -72,61 +70,133 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
     enough_helium = true;
   end
 
-  % Transient blowdown for flight
-  % track bottle pressure by assuming choked flow at COPV outlet
+  %% Transient blowdown for flight
 
-  bottle_p = zeros(1,1);
-  bottle_p(1) = COPV_pressure; % Pa
-  A = 0.00114; % m^2 COPV outlet orifice area
-  delta_t = 0.0001; % s
-  m_gas_old = helium_mass_available; % kg
+   % find total system helium mass
+
+prop_mass_kg = Prop.prop_mass / 2.20462; % lbm to kg
+fuel_mass_t = prop_mass_kg / (1 + OF); % kg 
+ox_mass_t = prop_mass_kg - fuel_mass_t; % kg
+
+V_fuel_ullage_t = Press.fuel_tank_volume - fuel_mass_t / rho_fuel; % m^3
+V_ox_ullage_t = Press.ox_tank_volume - ox_mass_t / rho_ox; %m^3 
+
+burn_time = prop_mass_kg / mdot; %s
+
+rho_He_ullage = py.CoolProp.CoolProp.PropsSI('D', 'P', tank_pressure, 'S', s_initial, 'helium'); % kg/m^3
+
+m_helium_total = helium_mass_available + (rho_He_ullage * V_fuel_ullage_t) + (rho_He_ullage * V_ox_ullage_t); 
+
+ % initializing
+
+   delta_t = 0.01; % s
+  bottle_p = COPV_pressure; % Pa
+  T_copv = T_helium; % K
+  rho_helium_now = rho_helium_full; % kg/m^3
+
   t = 0; % s
-  vdot_array = [];
-  gamma_array = [];
-  temp_array = []; % K
-  stop_pressure = 100*6894.76; % Pa lower than tank pressure to see full blowdown in graph
-
-  idx_cross = []; % timestep where bottle_p first drops below tank_pressure
-
   i = 1;
-  while bottle_p(i) > stop_pressure
 
-     % fixing state w/ changing pressure & constant entropy (isentropic) instead of constant temp
+  bottle_p_array = COPV_pressure; % Pa
+  temp_array = T_helium; % K
+  thrust_array = []; % N
+  Pc_array = []; % Pa
+  mdot_array = []; % kg/s
 
-    rho_helium_t = py.CoolProp.CoolProp.PropsSI('D', 'P', bottle_p(i), 'S', s_initial, 'helium'); % kg/m^3
-    Cp = py.CoolProp.CoolProp.PropsSI('Cpmass', 'P', bottle_p(i), 'S', s_initial, 'helium');
-    Cv = py.CoolProp.CoolProp.PropsSI('Cvmass', 'P', bottle_p(i), 'S', s_initial, 'helium');
-    gamma = Cp / Cv;
-    gamma_array(i) = gamma;
+  idx_cross = []; % timestep index where bottle_p first drops below tank_pressure
+  t_cross = []; % s
 
-    T_helium_t = py.CoolProp.CoolProp.PropsSI('T', 'P', bottle_p(i), 'S', s_initial, 'helium'); % K
-    temp_array(i) = T_helium_t;
+  in_blowdown = false;
 
-    % choked flow thru COPV outlet
-    mdot_gas = ((A * bottle_p(i) * sqrt(gamma)) / (sqrt(298) * sqrt(R_helium))) * ((gamma + 1) / 2)^(-(gamma + 1) / (2 * (gamma - 1))); % kg/s
+  % run until prop mass reaches 0 
 
-    vdot_array(i) = mdot_gas / rho_helium_t;
+  while fuel_mass_t > 0 && ox_mass_t > 0
 
-    % subtract gas lost this step & update pressure
+    if ~in_blowdown
+      % phase 1 
+      % regulated at tank pressure
+      % tank pressure  at dome setpoint
+    
+      mdot_fuel_i = mdot_fuel;
+      mdot_ox_i = mdot_ox;
+      thrust_array(i) = NaN; 
+      Pc_array(i) = Prop.Pc * 6894.76; % Pa
+      mdot_array(i) = mdot;
 
-    mass_lost = mdot_gas * delta_t;
-    m_gas_new = m_gas_old - mass_lost;
-    bottle_p(i+1) = bottle_p(i) * m_gas_new / m_gas_old;
+    else
+      % phase 2
+      % blowdown, tank pressure = COPV pressure
+      % systemSolver called to iterate system for chamber pressure
 
-    % log timestep where COPV pressure drops below tank pressure
-    if isempty(idx_cross) && bottle_p(i+1) <= tank_pressure
-      idx_cross = i+1;
+      P_tank = bottle_p; % Pa
+
+      [thrust_i, mdot_i, of_i, Pc_i, ~, ~] = systemSolver( ...
+          rho_fuel, rho_ox, P_tank, P_tank, CdA_fuel_inj, CdA_ox_inj, ...
+          params.P_amb * 6894.76, A_throat, params.Cstar_eff, params.Ctau_eff, ...
+          A_exit, params);
+
+      thrust_array(i) = thrust_i; % N
+      Pc_array(i) = Pc_i; % Pa
+      mdot_array(i) = mdot_i; % kg/s
+
+      mdot_fuel_i = mdot_i / (1 + of_i); % kg/s
+      mdot_ox_i = mdot_i - mdot_fuel_i;  % kg/s
     end
 
-    m_gas_old = m_gas_new;
-    t = t + delta_t;
+    % Deplete prop mass by mdot * dt
+
+    fuel_mass_t = fuel_mass_t - mdot_fuel_i * delta_t; % kg
+    ox_mass_t = ox_mass_t - mdot_ox_i * delta_t; % kg
+
+    if fuel_mass_t <= 0 || ox_mass_t <= 0
+      break
+    end
+
+    % Update ullage volumes
+
+    V_fuel_ullage_t = Press.fuel_tank_volume - fuel_mass_t / rho_fuel; % m^3
+    V_ox_ullage_t = Press.ox_tank_volume - ox_mass_t / rho_ox; % m^3
+
+    % subtract mass required in ullages (at current tank pressure) from the fixed total, remainder is left in the COPV 
+
+    m_fuel_tank = rho_He_ullage * V_fuel_ullage_t; % kg
+    m_ox_tank = rho_He_ullage * V_ox_ullage_t; % kg
+    m_copv_now = m_helium_total - (m_fuel_tank + m_ox_tank); % kg
+
+    if m_copv_now <= 0
+      break
+    end
+
+    % COPV pressure
+    %  density from remaining mass in COPV & volume
+    % temperature from polytropic relation w/ density ratio
+    % pressure from CoolProp at (density, T)
+
+    rho_helium_prev = rho_helium_now; % kg/m^3
+    rho_helium_now = m_copv_now / COPV_volume; % kg/m^3
+
+    T_copv = T_copv * (rho_helium_now / rho_helium_prev) ^ (polytropic_n - 1); % K
+
+    bottle_p = py.CoolProp.CoolProp.PropsSI('P','D',rho_helium_now,'T',T_copv,'helium'); % Pa
+
+    bottle_p_array(i+1) = bottle_p; % Pa
+    temp_array(i+1) = T_copv; % K
+
+    % Log time COPV goes into blowdown
+
+    if ~in_blowdown && bottle_p <= tank_pressure
+      in_blowdown = true;
+      idx_cross = i+1;
+      t_cross = (i+1) * delta_t; % s
+      fprintf('Entering blowdown at t = %.4f s (COPV pressure <= tank pressure)\n', t_cross);
+    end
+
+    t = t + delta_t; % s
     i = i + 1;
 
   end
 
-  t_cross = (idx_cross - 1) * delta_t; % s, time at which COPV drops below tank pressure
-  fprintf('Time for COPV to drop below tank pressure: %.4f s\n', t_cross);
-  fprintf('Time for COPV to reach stop_pressure (full blowdown): %.4f s\n', t);
+  fprintf('Sim complete: t = %.4f s\n', t);
 
   % Duration check
   % checks if 12L actually last whole burn
@@ -143,42 +213,37 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
     duration_ok = true;
   end
 
-  % Flow rate check
-  % checks minimum Helium vdot >= propellant vdot if choked at COPV
 
-  vdot_gas_min = min(vdot_array(1:idx_cross-1));
-
-  if vdot_gas_min > vdot_tot
-    enough_flow = true;
-  else
-    enough_flow = false;
-  end
-
-  if ~enough_flow
-    fprintf('Insufficient pressurant volumetric flow rate.\n');
-  end
-  fprintf('Flow rate OK (worst-case, pre-crossing): %d\n', enough_flow);
-
-  % Dome sizing/check
+  %% Dome sizing
   % sizes # of domes needed so minimum Helium vdot >= propellant vdot if choked at dome
+
+    if isempty(idx_cross)
+    dome_check_range = 1:length(bottle_p_array);
+  else
+    dome_check_range = 1:(idx_cross-1);
+  end
 
   number_of_domes = [];
   current_dome_number = 1;
 
-  for j = 1:(idx_cross - 1)
+  for j = dome_check_range
 
-    rho_helium_j = py.CoolProp.CoolProp.PropsSI('D', 'P', bottle_p(j), 'S', s_initial, 'helium'); % kg/m^3
+    rho_helium_j = py.CoolProp.CoolProp.PropsSI('D', 'P', bottle_p_array(j), 'S', s_initial, 'helium'); % kg/m^3
 
     domes_number_good = true;
     while domes_number_good
 
-      M = py.CoolProp.CoolProp.PropsSI('M', 'P', bottle_p(j), 'S', s_initial, 'helium'); % kg/mol
+          Cp_j = py.CoolProp.CoolProp.PropsSI('Cpmass', 'P', bottle_p_array(j), 'S', s_initial, 'helium');
+      Cv_j = py.CoolProp.CoolProp.PropsSI('Cvmass', 'P', bottle_p_array(j), 'S', s_initial, 'helium');
+      gamma_j = Cp_j / Cv_j;
+
+      M = py.CoolProp.CoolProp.PropsSI('M', 'P', bottle_p_array(j), 'S', s_initial, 'helium'); % kg/mol
       R = 8.31446261815324 / M;
 
       % choked flow through the dome's orifice
-      mdot_dome = Dome_orifice_area * bottle_p(j) * sqrt(gamma_array(j) / (R * temp_array(j))) * ((gamma_array(j) + 1)/2)^(-(gamma_array(j) + 1)/(2*(gamma_array(j) - 1))); % kg/s
+      mdot_dome = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_j / (R * temp_array(j))) * ((gamma_j + 1)/2)^(-(gamma_j + 1)/(2*(gamma_j - 1))); % kg/s
 
-      vdot_dome = (mdot_dome / rho_helium_j) * current_dome_number;
+      vdot_dome = (mdot_dome / rho_helium_j) * current_dome_number; % m^3/s
 
       if vdot_dome < vdot_tot
         current_dome_number = current_dome_number + 1;
@@ -195,30 +260,42 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   max_domes = max(number_of_domes);
   fprintf('Total number of domes needed: %d\n', max_domes);
 
-  % Graph COPV pressure & temperature
-  t_array = (0:length(bottle_p)-1) * delta_t;
-  t_array_temp = (0:length(temp_array)-1) * delta_t;
+ %% Graph
+
+  t_array = (0:length(bottle_p_array)-1) * delta_t;
 
   figure;
-
-  subplot(2,1,1);
-  plot(t_array, bottle_p/6894.76, 'LineWidth', 1.5);
-  yline(tank_pressure/6894.76, '--r', 'Tank pressure');
-  xline(burn_time, '--k', 'Burn time');
-  xline(t_cross, ':b', 'Crosses tank pressure');
+  subplot(3,1,1);
+  plot(t_array, bottle_p_array/6894.76, 'LineWidth', 1.5);
+  yline(tank_pressure/6894.76, '--r', 'Tank pressure (dome setpoint)');
+  xline(burn_time, '--k', 'Nominal burn time');
+  if ~isempty(t_cross)
+    xline(t_cross, ':b', 'Enters blowdown');
+  end
   xlabel('Time [s]'); ylabel('COPV pressure [psi]');
   title('COPV Pressure vs Time'); grid on;
 
-  subplot(2,1,2);
-  plot(t_array_temp, temp_array, 'LineWidth', 1.5);
-  xline(burn_time, '--k', 'Burn time');
-  xline(t_cross, ':b', 'Crosses tank pressure');
-  xlabel('Time [s]'); ylabel('COPV gas temperature [K]');
+  subplot(3,1,2);
+  plot(t_array, temp_array, 'LineWidth', 1.5);
+  xlabel('Time [s]'); ylabel('COPV temperature [K]');
   title('COPV Temperature vs Time'); grid on;
 
-  % Pack structure output
+  subplot(3,1,3);
+  t_solved = t_array(1:length(Pc_array));
+  plot(t_solved, Pc_array/6894.76, 'LineWidth', 1.5);
+  xlabel('Time [s]'); ylabel('Chamber pressure [psi]');
+  title('Chamber Pressure vs Time (Phase 1 nominal, Phase 2 solved)'); grid on;
+
+ %% Pack structure output
+
   out.max_domes = max_domes;
   out.t_cross = t_cross;
   out.t_blowdown = t;
+  out.bottle_p = bottle_p_array; % Pa
+  out.temp_array = temp_array; % K
+  out.thrust_array = thrust_array; % N
+  out.Pc_array = Pc_array; % Pa
+  out.mdot_array = mdot_array; % kg/s
+  out.duration_ok = duration_ok;
 
 end
