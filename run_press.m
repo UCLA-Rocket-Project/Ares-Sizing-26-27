@@ -92,20 +92,17 @@ function [Prop, Press] = run_press(Prop, params)
 
     tank_press_pa = Press.tank_press * 6894.76; % psi to Pa (CoolProp wants Pa)
 
-    % He density for fuel side
-    He_density_low = py.CoolProp.CoolProp.PropsSI('D','T', params.T_He, 'P', tank_press_pa, 'helium'); % kg/m^3
-
-    % He density for LOx side
- 
-    He_density_cryo = py.CoolProp.CoolProp.PropsSI('D','T', params.T_ox, 'P', tank_press_pa, 'helium'); % kg/m^3
-
-    % He density at COPV 
-
     P_He_full_pa = params.P_He_init * 6894.76; % psi to Pa
-    He_density_full = py.CoolProp.CoolProp.PropsSI('D','T', params.T_He, 'P', P_He_full_pa, 'helium'); % kg/m^3
+
+    % entropy at initial conditions
+
+    s_initial = py.CoolProp.CoolProp.PropsSI('S', 'T', params.T_He, 'P', P_He_full_pa, 'helium'); % J/kg*K
+
+    He_density_tank = py.CoolProp.CoolProp.PropsSI('D', 'P', tank_press_pa, 'S', s_initial, 'helium'); % kg/m^3
+    He_density_full = py.CoolProp.CoolProp.PropsSI('D','P', P_He_full_pa, 'S', s_initial, 'helium'); % kg/m^3
 
     % find mass needed by combining fuel side & ox side Helium density w/ respective volumes
-    mass_He_required = (fuel_tank_volume * He_density_low) + (ox_tank_volume * He_density_cryo); % kg
+    mass_He_required = (fuel_tank_volume + ox_tank_volume) * He_density_tank; % kg
 
     % divide by COPV side Helium density to find COPV volume
 
