@@ -54,12 +54,8 @@ function [out, status] = get_press_ground(Prop, Press, params)
   burn_time = prop_mass / mdot; % s
 
   % static mass balance: finds number of bottles & mass of n2 needed to fill tank volume
-  % uses worst case density after isnetropic cooling
-   % fixing state w/ changing pressure & constant entropy (isentropic) instead of constant temp
 
-  s_initial = py.CoolProp.CoolProp.PropsSI('S', 'T', T_nitrogen, 'P', GN2_pressure, 'nitrogen'); % J/(kg*K)
-
-  rho_nitrogen = py.CoolProp.CoolProp.PropsSI('D', 'P', tank_pressure, 'S', s_initial, 'nitrogen'); % kg/m^3
+  rho_nitrogen = py.CoolProp.CoolProp.PropsSI('D', 'P', tank_pressure, 'T', T_nitrogen, 'nitrogen'); % kg/m^3
   nitrogen_mass = rho_nitrogen * tank_volume; % kg
 
   raw_bottle_number = nitrogen_mass / 11; % 11 kg for K-bottle
@@ -72,7 +68,8 @@ function [out, status] = get_press_ground(Prop, Press, params)
      bottle_volume = 11 / rho_nitrogen_at_GN2_pressure; % m^3
      total_bottle_volume = bottle_number * bottle_volume; % m^3, all bottles in the bank
 
-    rho_N2_ullage = py.CoolProp.CoolProp.PropsSI('D','P', tank_pressure, 'S', s_initial, 'nitrogen'); % kg/m^3
+   rho_fuel_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', T_fuel, 'P', tank_pressure, 'nitrogen'); %kg/m^3
+   rho_ox_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', T_ox, 'P', tank_pressure, 'nitrogen'); %kg/m^3
 
     prop_mass_kg = Prop.prop_mass / 2.20462; % lbm to kg
     fuel_mass_t = prop_mass_kg / (1 + OF); 
@@ -82,7 +79,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
     V_ox_ullage_t = ox_volume - ox_mass_t / rho_ox;
 
     m_bottles_initial = bottle_number * 11; % kg
-    m_total = m_bottles_initial + rho_N2_ullage * V_fuel_ullage_t + rho_N2_ullage * V_ox_ullage_t;
+    m_total = m_bottles_initial + rho_fuel_ullage_gas * V_fuel_ullage_t + rho_ox_ullage_gas * V_ox_ullage_t;
 
 % Loop
 
@@ -125,7 +122,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
      V_ox_ullage_t = ox_volume - ox_mass_t / rho_ox;
 
      % calculate mass of nitrogen needed to fill ullage at tank pressure 
-     m_ullage_now = rho_N2_ullage * V_fuel_ullage_t + rho_N2_ullage * V_ox_ullage_t;
+     m_ullage_now = rho_fuel_ullage_gas * V_fuel_ullage_t + rho_ox_ullage_gas * V_ox_ullage_t;
 
      % subtract uillage gas mass from bottle mass 
 

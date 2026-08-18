@@ -33,8 +33,7 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, 
 
   R_helium = 2077; % J/(kg*K), specific gas constant for Helium
 
-  s_initial = py.CoolProp.CoolProp.PropsSI('S', 'T', T_helium, 'P', COPV_pressure, 'helium'); % J/(kg*K)
-  rho_helium_full = py.CoolProp.CoolProp.PropsSI('D', 'P', COPV_pressure, 'S', s_initial, 'helium'); % kg/m^3
+  rho_helium_full = py.CoolProp.CoolProp.PropsSI('D', 'P', COPV_pressure, 'T', T_helium, 'helium'); % kg/m^3
   helium_mass_available = COPV_volume * rho_helium_full; % kg
 
 
@@ -65,9 +64,10 @@ V_ox_ullage_t = Press.ox_tank_volume - ox_mass_t / rho_ox; %m^3
 
 burn_time = prop_mass_kg / mdot; %s
 
-rho_He_ullage = py.CoolProp.CoolProp.PropsSI('D', 'P', tank_pressure, 'S', s_initial, 'helium'); % kg/m^3
+rho_fuel_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', T_fuel, 'P', tank_pressure, 'helium'); %kg/m^3
+rho_ox_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', T_fuel, 'P', tank_pressure, 'helium'); % kg/m^3
 
-m_helium_total = helium_mass_available + (rho_He_ullage * V_fuel_ullage_t) + (rho_He_ullage * V_ox_ullage_t); 
+m_helium_total = helium_mass_available + (rho_fuel_ullage_gas * V_fuel_ullage_t) + (rho_ox_ullage_gas * V_ox_ullage_t); 
 
  % initializing
 
@@ -138,8 +138,8 @@ m_helium_total = helium_mass_available + (rho_He_ullage * V_fuel_ullage_t) + (rh
 
     % subtract mass required in ullages (at current tank pressure) from the fixed total, remainder is left in the COPV 
 
-    m_fuel_tank = rho_He_ullage * V_fuel_ullage_t; % kg
-    m_ox_tank = rho_He_ullage * V_ox_ullage_t; % kg
+    m_fuel_tank = rho_fuel_ullage_gas * V_fuel_ullage_t; % kg
+    m_ox_tank = rho_ox_ullage_gas * V_ox_ullage_t; % kg
     m_copv_now = m_helium_total - (m_fuel_tank + m_ox_tank); % kg
 
     if m_copv_now <= 0
@@ -207,16 +207,16 @@ m_helium_total = helium_mass_available + (rho_He_ullage * V_fuel_ullage_t) + (rh
 
   for j = dome_check_range
 
-    rho_helium_j = py.CoolProp.CoolProp.PropsSI('D', 'P', bottle_p_array(j), 'S', s_initial, 'helium'); % kg/m^3
+    rho_helium_j = py.CoolProp.CoolProp.PropsSI('D', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium'); % kg/m^3
 
     domes_number_good = true;
     while domes_number_good
 
-          Cp_j = py.CoolProp.CoolProp.PropsSI('Cpmass', 'P', bottle_p_array(j), 'S', s_initial, 'helium');
-      Cv_j = py.CoolProp.CoolProp.PropsSI('Cvmass', 'P', bottle_p_array(j), 'S', s_initial, 'helium');
+      Cp_j = py.CoolProp.CoolProp.PropsSI('Cpmass', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium');
+      Cv_j = py.CoolProp.CoolProp.PropsSI('Cvmass', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium');
       gamma_j = Cp_j / Cv_j;
 
-      M = py.CoolProp.CoolProp.PropsSI('M', 'P', bottle_p_array(j), 'S', s_initial, 'helium'); % kg/mol
+      M = py.CoolProp.CoolProp.PropsSI('M', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium'); % kg/mol
       R = 8.31446261815324 / M;
 
       % choked flow through the dome's orifice
