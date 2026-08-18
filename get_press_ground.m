@@ -86,30 +86,75 @@ function [out, status] = get_press_ground(Prop, Press, params)
 
 % Loop
 
+% initializing 
+    delta_t = 0.01; 
+    t = 0;
+    i = 1;
+    bottle_p_array = GN2_pressure; % Pa
+    temp_array = T_nitrogen; % K
+    vdot_array = [];
+    gamma_array = [];
     rho_old = 11 / bottle_volume; % kg/m^
     T_old = T_nitrogen;
     bottle_p = GN2_pressure;
 
     while fuel_mass_t > 0 && ox_mass_t > 0
-     fuel_mass_t = fuel_mass_t - mdot_fuel*delta_t;
-    ox_mass_t = ox_mass_t - mdot_ox*delta_t;
+
+    % deplete fuel mass by mdot * dt
+
+    fuel_mass_t = fuel_mass_t - mdot_fuel * delta_t;
+    ox_mass_t = ox_mass_t - mdot_ox * delta_t;
+
     if fuel_mass_t <= 0 || ox_mass_t <= 0, break; end
+    
+    % calculate gamma at current bottle temperature and pressure 
 
-     V_fuel_ullage_t = fuel_volume - fuel_mass_t/rho_fuel;
-     V_ox_ullage_t = ox_volume - ox_mass_t/rho_ox;
+     Cp = py.CoolProp.CoolProp.PropsSI('Cpmass', 'T', T_old, 'P', bottle_p, 'nitrogen');
+     Cv = py.CoolProp.CoolProp.PropsSI('Cvmass', 'T', T_old, 'P', bottle_p, 'nitrogen');
+     gamma = Cp/ Cv;
+     gamma_array(i) = gamma;
 
+     % calculate volumetric flow rate, assuming choked at bottle orifice
+     
+     mdot_gas = ((A * bottle_p * sqrt(gamma)) / (sqrt(T_old) * sqrt(R_nitrogen))) * ((gamma + 1) / 2) ^ (-(gamma + 1) / (2 * (gamma - 1)));
+     vdot_array = mdot_gas / rho_old;
+
+     % update tank ullage volume
+
+     V_fuel_ullage_t = fuel_volume - fuel_mass_t / rho_fuel;
+     V_ox_ullage_t = ox_volume - ox_mass_t / rho_ox;
+
+     % calculate mass of nitrogen needed to fill ullage at tank pressure 
      m_ullage_now = rho_N2_ullage * V_fuel_ullage_t + rho_N2_ullage * V_ox_ullage_t;
+
+     % subtract uillage gas mass from bottle mass 
+
      m_bottles_now = m_total - m_ullage_now;
+
      if m_bottles_now <= 0, break; end
 
+     % calculate new density in bottle 
+
     rho_new = m_bottles_now / total_bottle_volume;
-     T_new = T_old * (rho_new/rho_old)^(polytropic_n - 1);
+
+    % step temperature using polytropic relation & density ratio
+
+    T_new = T_old * (rho_new/rho_old)^(polytropic_n - 1);
+
+    % call CoolProp for bottle pressure at current density and temperature 
     bottle_p = py.CoolProp.CoolProp.PropsSI('P','D',rho_new,'T',T_new,'nitrogen');
 
-     rho_old = rho_new; T_old = T_new;
+    bottle_p_array(i+1) = bottle_p; 
+    temp_array(i+1) = T_new;
+    
+    rho_old = rho_new; 
+    T_old = T_new;
+
+    t = t + delta_t; 
+    i = i + 1;
 
     end
-    
+
   % Duration check
   % checks if the bottle actually last whole burn
 
@@ -126,6 +171,8 @@ function [out, status] = get_press_ground(Prop, Press, params)
   % Flow rate check
   % checks minimum GN2 vdot >= propellant vdot if choked at bottle
   % if not adds to bottle_number
+
+  % find minimum volumetric flow rate throughout burn 
   vdot_gas_min = bottle_number * min(vdot_array);
 
   if vdot_gas_min > vdot_tot
@@ -156,19 +203,19 @@ function [out, status] = get_press_ground(Prop, Press, params)
   number_of_domes = [];
   current_dome_number = 1;
 
-  for j = 1:(length(bottle_p) - 1)
+  for j = 1:(length(bottle_p_array) - 1)
 
-    rho_nitrogen_j = py.CoolProp.CoolProp.PropsSI('D', 'T', 298, 'P', bottle_p(j), 'nitrogen'); % kg/m^3
+    rho_nitrogen_j = py.CoolProp.CoolProp.PropsSI('D', 'T', 298, 'P', bottle_p_array(j), 'nitrogen'); % kg/m^3
 
     domes_number_good = true;
     while domes_number_good
 
-      M = py.CoolProp.CoolProp.PropsSI('M', 'T', 298, 'P', bottle_p(j), 'nitrogen'); % kg/mol
+      M = py.CoolProp.CoolProp.PropsSI('M', 'T', 298, 'P', bottle_p_array(j), 'nitrogen'); % kg/mol
       R = 8.31446261815324 / M; % J/(kg*K)
 
       % choked flow through the dome's orifice
 
-      mdot_dome = Dome_orifice_area * bottle_p(j) * sqrt(gamma_array(j) / (R * 298)) * ((gamma_array(j) + 1)/2)^(-(gamma_array(j) + 1)/(2*(gamma_array(j) - 1))); % kg/s
+      mdot_dome = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_array(j) / (R * 298)) * ((gamma_array(j) + 1)/2)^(-(gamma_array(j) + 1)/(2*(gamma_array(j) - 1))); % kg/s
 
       vdot_dome = (mdot_dome / rho_nitrogen_j) * current_dome_number; % m^3/s
 
