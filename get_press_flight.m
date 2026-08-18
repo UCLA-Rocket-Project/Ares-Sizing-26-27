@@ -3,7 +3,6 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   % Pressurant Sizing Function for Helium / Flight COPV
 % Pressurant Sizing Script for Helium / Flight COPV 
 
-% static mass balance to check if 12L holds enough Helium mass
 % assumes choked flow at dome, checks if vdot_gas > vdot_prop, adds to dome # if not
 
 % added check that time for bottle from 4.5k to tank pressure > burn time
@@ -47,28 +46,6 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
   vdot_fuel = mdot_fuel / rho_fuel;
   vdot_ox = mdot_ox / rho_ox;
   vdot_tot = vdot_fuel + vdot_ox; % m^3/s
-
-
-
-  %% static mass balance
-  % checks if 12L COPV can hold enough helium mass to fill tanks (boolean)
-  % uses worst case density after isnetropic cooling
-
-  s_initial = py.CoolProp.CoolProp.PropsSI('S', 'T', T_helium, 'P', COPV_pressure, 'helium'); % J/(kg*K)
-  rho_helium_tank = py.CoolProp.CoolProp.PropsSI('D', 'P', tank_pressure, 'S', s_initial, 'helium'); % kg/m^3
-  helium_mass_needed = rho_helium_tank * tank_volume; % kg
-
-  rho_helium_full = py.CoolProp.CoolProp.PropsSI('D', 'P', COPV_pressure, 'S', s_initial, 'helium'); % kg/m^3
-  helium_mass_available = COPV_volume * rho_helium_full; % kg
-
-  if helium_mass_needed > helium_mass_available
-    fprintf('Insufficient helium mass: need %.4f kg, COPV holds %.4f kg\n', helium_mass_needed, helium_mass_available);
-    enough_helium = false;
-    status = -2; % Sentinel: Insufficient helium mass
-  else
-    fprintf('Sufficient helium in COPV (need %.4f kg, have %.4f kg)\n', helium_mass_needed, helium_mass_available);
-    enough_helium = true;
-  end
 
   %% Transient blowdown for flight
 
