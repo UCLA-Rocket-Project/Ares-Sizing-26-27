@@ -40,17 +40,18 @@ function p = input_parameters()
 
     p.T_N2 = 293; %K
 
-%     p.ox_feed_CdA = 4.435E-05 ; % m^2
+    % feed/injector CdAs
+    % taken from config.py in Michael's engine balance script
 
-  %  p.fuel_feed_CdA = 6.8516E-05 ; % m^2
-
-   % p.channel_CdA = 0.000047624 ; % m^2
-
- %   p.inj_ox_CdA = 0.00005837500098; % m^2
-
-  %  p.inj_f_CdA = 0.00008144; % m^2
-
-    % CdA conversions happen inside run_press
+    p.CdA_fuel_feed = 0.00005075932546; % m^2
+    p.CdA_ox_feed = 0.0000421133315; % m^2
+    p.CdA_fuel_injector = 1.9125E-05; % m^2
+    p.CdA_ox_injector = 2.7687E-05; % m^2
+ 
+    % Series-combined CdA (feed + injector)
+    
+    p.CdA_fuel = 1 / sqrt((1/p.CdA_fuel_feed)^2 + (1/p.CdA_fuel_injector)^2); % m^2
+    p.CdA_ox = 1 / sqrt((1/p.CdA_ox_feed)^2 + (1/p.CdA_ox_injector)^2); % m^2
 
     p.ac_at = 4 ;
 
