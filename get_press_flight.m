@@ -33,6 +33,11 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
 
   R_helium = 2077; % J/(kg*K), specific gas constant for Helium
 
+  s_initial = py.CoolProp.CoolProp.PropsSI('S', 'T', T_helium, 'P', COPV_pressure, 'helium'); % J/(kg*K)
+  rho_helium_full = py.CoolProp.CoolProp.PropsSI('D', 'P', COPV_pressure, 'S', s_initial, 'helium'); % kg/m^3
+  helium_mass_available = COPV_volume * rho_helium_full; % kg
+
+
   % find fuel density
   rho_water = py.CoolProp.CoolProp.PropsSI('D', 'T', T_fuel, 'P', tank_pressure, 'water');
   rho_ethanol = py.CoolProp.CoolProp.PropsSI('D', 'T', T_fuel, 'P', tank_pressure, 'ethanol');
