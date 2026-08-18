@@ -1,4 +1,4 @@
-function [out, status] = get_press_flight(Prop, Press, PV_mel, params)
+function [out, status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, A_throat, A_exit)
 
   % Pressurant Sizing Function for Helium / Flight COPV
 % Pressurant Sizing Script for Helium / Flight COPV 
@@ -101,7 +101,7 @@ m_helium_total = helium_mass_available + (rho_He_ullage * V_fuel_ullage_t) + (rh
     
       mdot_fuel_i = mdot_fuel;
       mdot_ox_i = mdot_ox;
-      thrust_array(i) = NaN; 
+      thrust_array(i) = Prop.Thrust * 4.44822; % lbf to N
       Pc_array(i) = Prop.Pc * 6894.76; % Pa
       mdot_array(i) = mdot;
 
@@ -112,10 +112,7 @@ m_helium_total = helium_mass_available + (rho_He_ullage * V_fuel_ullage_t) + (rh
 
       P_tank = bottle_p; % Pa
 
-      [thrust_i, mdot_i, of_i, Pc_i, ~, ~] = systemSolver( ...
-          rho_fuel, rho_ox, P_tank, P_tank, CdA_fuel_inj, CdA_ox_inj, ...
-          params.P_amb * 6894.76, A_throat, params.Cstar_eff, params.Ctau_eff, ...
-          A_exit, params);
+    [thrust_i, mdot_i, of_i, Pc_i, ~, ~] = systemSolver(rho_fuel, rho_ox, P_tank, P_tank, params.CdA_fuel, params.CdA_ox, params.P_amb * 6894.76, A_throat, params.Cstar_eff, params.Ctau_eff, A_exit, CEA_obj);
 
       thrust_array(i) = thrust_i; % N
       Pc_array(i) = Pc_i; % Pa
