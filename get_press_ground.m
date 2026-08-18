@@ -114,7 +114,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
      % calculate volumetric flow rate, assuming choked at bottle orifice
      
      mdot_gas = ((A * bottle_p * sqrt(gamma)) / (sqrt(T_old) * sqrt(R_nitrogen))) * ((gamma + 1) / 2) ^ (-(gamma + 1) / (2 * (gamma - 1)));
-     vdot_array = mdot_gas / rho_old;
+     vdot_array(i) = mdot_gas / rho_old;
 
      % update tank ullage volume
 
@@ -233,7 +233,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
  t_array = (0:length(bottle_p)-1) * delta_t;
 
  figure;
- plot(t_array, bottle_p/6894.76, 'LineWidth', 1.5);
+ plot(t_array, bottle_p_array / 6894.76, 'LineWidth', 1.5);
  yline(tank_pressure/6894.76, '--r', 'Tank pressure');
  xline(burn_time, '--k', 'Burn time');
  xline(t, ':b', 'Reaches tank pressure');
