@@ -1,18 +1,18 @@
 % main_press.m
 %
-%  driver for pressurant sizing (flight COPV + ground GN2),
+% driver for pressurant sizing (flight COPV + ground GN2),
 
 clear; clc;
 
 %% Parameter inputs 
 Pc = 370;         % psi
-OF = 1.40;
+OF = 1.4;
 eps = 5;
 prop_mass = 100;  % lbm
 
 %% run functions 
 params = input_parameters();
-params.polytropic_n = 1.3; 
+params.polytropic_n = 1.67; 
 
 Prop = struct('OF', OF, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
 Prop = run_CEA(Prop, params);
