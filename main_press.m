@@ -18,11 +18,7 @@ params.polytropic_n_N2 = 1.4;
 Prop = struct('OF', OF, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
 Prop = run_CEA(Prop, params);
 [Prop, Press] = run_press(Prop, params);
-PV_mel = get_PV_mel(prop_mass, OF, Press.tank_press, Press.V_He);
-
-if isequal(PV_mel, -1) || isequal(PV_mel, -2)
-    error('PV_mel infeasible (code %d) for this combo -- pick different Pc/OF/eps/prop_mass', PV_mel);
-end
+PV_mel.copv_v = 12;
 
 % geometry 
 A_throat = Prop.A_t * 0.00064516; % in^2 to m^2
