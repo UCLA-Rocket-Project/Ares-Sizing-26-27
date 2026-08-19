@@ -208,29 +208,30 @@ function [out, status] = get_press_ground(Prop, Press, params)
 
   number_of_domes = [];
   current_dome_number = 1;
+  vdot_dome_array = [];
 
   for j = 1:(length(bottle_p_array) - 1)
 
     rho_nitrogen_j = py.CoolProp.CoolProp.PropsSI('D', 'T', temp_array(j), 'P', bottle_p_array(j), 'nitrogen'); % kg/m^3
-
-    domes_number_good = true;
-    while domes_number_good
-
-      M = py.CoolProp.CoolProp.PropsSI('M', 'T', 298, 'P', bottle_p_array(j), 'nitrogen'); % kg/mol
+     M = py.CoolProp.CoolProp.PropsSI('M', 'T', 298, 'P', bottle_p_array(j), 'nitrogen'); % kg/mol
       R = 8.31446261815324 / M; % J/(kg*K)
 
       % choked flow through the dome's orifice
 
-      mdot_dome = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_array(j) / (R * temp_array(j))) * ((gamma_array(j) + 1)/2)^(-(gamma_array(j) + 1)/(2*(gamma_array(j) - 1))); % kg/s
+      mdot_dome_j = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_array(j) / (R * temp_array(j))) * ((gamma_array(j) + 1)/2)^(-(gamma_array(j) + 1)/(2*(gamma_array(j) - 1))); % kg/s
 
-      vdot_dome = (mdot_dome / rho_nitrogen_j) * current_dome_number; % m^3/s
+      vdot_dome_array(j) = (mdot_dome_j / rho_nitrogen_j) * current_dome_number; % m^3/s
 
+    domes_number_good = true;
+    while domes_number_good
+
+        vdot_dome = vdot_dome_array(j) * current_dome_number;
       if vdot_dome < vdot_tot
         current_dome_number = current_dome_number + 1;
       else
         number_of_domes(end+1) = current_dome_number;
-        current_dome_number = 1;
         domes_number_good = false;
+
       end
     end
   end
@@ -238,7 +239,53 @@ function [out, status] = get_press_ground(Prop, Press, params)
   max_domes = max(number_of_domes);
   fprintf('Total number of domes needed: %d\n', max_domes);
 
-% Graph GN2 bottle pressure over time
+% Graphs
+
+% bottle choked vdot vs required 
+figure('Color', 'w');
+hold on;
+
+t_bottle = (0:length(vdot_array)-1) * delta_t;
+plot(t_bottle, vdot_array, 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2, 'DisplayName', 'Bottle choked vdot (single)');
+yline(vdot_tot, '--', 'Color', [0.0000 0.4470 0.7410], 'LineWidth', 2, 'DisplayName', 'Required propellant vdot');
+
+xlabel('Time (s)');
+ylabel('Volumetric flow rate (m^3/s)');
+title('Bottle choked vdot vs. Required vdot (per bottle)');
+
+grid on;
+ax = gca;
+ax.Color = 'w';
+ax.XColor = 'k';
+ax.YColor = 'k';
+ax.GridColor = 'k';
+ax.GridAlpha = 0.15;
+
+legend('Location', 'best');
+hold off;
+
+%dome choked vdot 
+figure('Color', 'w');
+hold on;
+
+t_dome = (1:(length(bottle_p_array)-1)) * delta_t;
+plot(t_dome, vdot_dome_array(1:(length(bottle_p_array)-1)), 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2, 'DisplayName', 'Dome choked vdot (single)');
+yline(vdot_tot, '--', 'Color', [0.0000 0.4470 0.7410], 'LineWidth', 2, 'DisplayName', 'Required propellant vdot');
+
+xlabel('Time (s)');
+ylabel('Volumetric flow rate (m^3/s)');
+title('Dome choked vdot vs. Required vdot');
+
+grid on;
+ax = gca;
+ax.Color = 'w';
+ax.XColor = 'k';
+ax.YColor = 'k';
+ax.GridColor = 'k';
+ax.GridAlpha = 0.15;
+
+legend('Location', 'best');
+hold off;
  t_array = (0:length(bottle_p_array)-1) * delta_t;
 
  gn2_psi = bottle_p_array / 6894.76;

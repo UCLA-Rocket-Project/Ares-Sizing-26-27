@@ -201,15 +201,12 @@ m_helium_total = helium_mass_available + (rho_fuel_ullage_gas * V_fuel_ullage_t)
 
   number_of_domes = [];
   current_dome_number = 1;
+  vdot_dome_array = [];
 
   for j = dome_check_range
 
     rho_helium_j = py.CoolProp.CoolProp.PropsSI('D', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium'); % kg/m^3
-
-    domes_number_good = true;
-    while domes_number_good
-
-      Cp_j = py.CoolProp.CoolProp.PropsSI('Cpmass', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium');
+     Cp_j = py.CoolProp.CoolProp.PropsSI('Cpmass', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium');
       Cv_j = py.CoolProp.CoolProp.PropsSI('Cvmass', 'T', temp_array(j), 'P', bottle_p_array(j), 'helium');
       gamma_j = Cp_j / Cv_j;
 
@@ -217,15 +214,19 @@ m_helium_total = helium_mass_available + (rho_fuel_ullage_gas * V_fuel_ullage_t)
       R = 8.31446261815324 / M;
 
       % choked flow through the dome's orifice
-      mdot_dome = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_j / (R * temp_array(j))) * ((gamma_j + 1)/2)^(-(gamma_j + 1)/(2*(gamma_j - 1))); % kg/s
+      mdot_dome_j = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_j / (R * temp_array(j))) * ((gamma_j + 1)/2)^(-(gamma_j + 1)/(2*(gamma_j - 1))); % kg/s
 
-      vdot_dome = (mdot_dome / rho_helium_j) * current_dome_number; % m^3/s
+      vdot_dome_array(j) = (mdot_dome_j / rho_helium_j) * current_dome_number; % m^3/s
+
+    domes_number_good = true;
+
+    while domes_number_good
+        vdot_dome = vdot_dome_array(j) * current_dome_number; 
 
       if vdot_dome < vdot_tot
         current_dome_number = current_dome_number + 1;
       else
         number_of_domes(end+1) = current_dome_number;
-        current_dome_number = 1;
         domes_number_good = false;
       end
 
@@ -250,7 +251,32 @@ m_helium_total = helium_mass_available + (rho_fuel_ullage_gas * V_fuel_ullage_t)
       tank_psi(idx_cross:end) = copv_psi(idx_cross:length(t_solved));
   end
  
- % create figure
+ % create figuress
+
+ % dome choked vdot vs required 
+ figure('Color', 'w');
+hold on;
+
+t_dome = t_array(dome_check_range);
+plot(t_dome, vdot_dome_array(dome_check_range), 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2, 'DisplayName', 'Dome choked vdot (single)');
+yline(vdot_tot, '--', 'Color', [0.0000 0.4470 0.7410], 'LineWidth', 2, 'DisplayName', 'Required propellant vdot');
+
+xlabel('Time (s]');
+ylabel('Volumetric flow rate (m^3/s)');
+title('Dome choked vdot vs. Required vdot');
+
+grid on;
+ax = gca;
+ax.Color = 'w';
+ax.XColor = 'k';
+ax.YColor = 'k';
+ax.GridColor = 'k';
+ax.GridAlpha = 0.15;
+
+legend('Location', 'best');
+hold off;
+
+% pressures 
 
   figure('Color', 'w'); 
   hold on;
