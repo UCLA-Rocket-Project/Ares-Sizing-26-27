@@ -51,8 +51,8 @@ function [out, status] = get_press_ground(Prop, Press, params)
   vdot_tot = vdot_fuel + vdot_ox;       % m^3/
 
   % calc burn time
-  prop_mass = (fuel_volume * rho_fuel) + (ox_volume * rho_ox); % kg
-  burn_time = prop_mass / mdot; % s
+  prop_mass_kg = Prop.prop_mass / 2.20462; % lbm to kg
+  burn_time = prop_mass_kg / mdot; % s
 
   % static mass balance: finds number of bottles & mass of n2 needed to fill tank volume
 
@@ -150,6 +150,11 @@ function [out, status] = get_press_ground(Prop, Press, params)
 
     t = t + delta_t; 
     i = i + 1;
+
+    if bottle_p <= tank_pressure
+        fprintf('Bottle drops to tank pressure at t = %.4f s\n', t);
+        break
+    end
 
     end
 
