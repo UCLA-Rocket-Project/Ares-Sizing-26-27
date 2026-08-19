@@ -32,7 +32,7 @@ function p = input_parameters()
 
     p.T_He = 298; % K initial He temp
 
-    p.P_He_init = 4700; %psi COPV pressure
+    p.P_He_init = 4500; %psi COPV pressure
 
     p.GN2_bottle_orifice_area = 2.027E-5; % m^2 
 
