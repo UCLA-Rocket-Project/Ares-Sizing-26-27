@@ -211,7 +211,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
 
   for j = 1:(length(bottle_p_array) - 1)
 
-    rho_nitrogen_j = py.CoolProp.CoolProp.PropsSI('D', 'T', 298, 'P', bottle_p_array(j), 'nitrogen'); % kg/m^3
+    rho_nitrogen_j = py.CoolProp.CoolProp.PropsSI('D', 'T', temp_array(j), 'P', bottle_p_array(j), 'nitrogen'); % kg/m^3
 
     domes_number_good = true;
     while domes_number_good
@@ -221,7 +221,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
 
       % choked flow through the dome's orifice
 
-      mdot_dome = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_array(j) / (R * 298)) * ((gamma_array(j) + 1)/2)^(-(gamma_array(j) + 1)/(2*(gamma_array(j) - 1))); % kg/s
+      mdot_dome = Dome_orifice_area * bottle_p_array(j) * sqrt(gamma_array(j) / (R * temp_array(j))) * ((gamma_array(j) + 1)/2)^(-(gamma_array(j) + 1)/(2*(gamma_array(j) - 1))); % kg/s
 
       vdot_dome = (mdot_dome / rho_nitrogen_j) * current_dome_number; % m^3/s
 
