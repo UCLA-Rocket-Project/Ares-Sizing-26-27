@@ -110,13 +110,6 @@ function [mdot, thrust, T_adiabatic] = engineSim(P_chamber, P_ambient, of_ratio,
     % runs CEA to get C* 
     % finds total mdot using Pc * At / C* equation
 
-    card_str = sprintf(['fuel C2H5OH(L)   C 2 H 6 O 1\n', ...
-    'h,cal=-66370.0      t(k)=298.00      wt%%=75.00\n', ...
-    'fuel water H 2.0 O 1.0  wt%%=25.00\n', ...
-    'h,cal=-68308.  t(k)=298.00 rho,g/cc = 0.9998']);
-
-    py.rocketcea.cea_obj.add_new_fuel('ETHANOL_WATER_75_25(L)', card_str);
-
     P_chamber_psia = P_chamber * 0.000145038; % Pa -> psia
     P_ambient_psia = P_ambient * 0.000145038; % Pa -> psia
     eps = A_exit / A_throat;
