@@ -22,7 +22,7 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, 
   T_fuel        = params.T_fuel;        % K
   T_ox        = params.T_ox;        % K
   T_helium      = params.T_He;      % K initial COPV temp
-  polytropic_n = params.polytropic_n; 
+  polytropic_n = params.polytropic_n_He; 
 
   % Initialize outputs
   out.max_domes = 0;
@@ -185,7 +185,7 @@ m_helium_total = helium_mass_available + (rho_fuel_ullage_gas * V_fuel_ullage_t)
       status = -1; % Sentinel: Reaches tank pressure before burn ends
     end
   else
-    fprintf('COPV stays above tank pressure for full burn (margin: %.4f s)\n', t_cross - burn_time);
+    fprintf('COPV stays above tank pressure for full burn\n');
     duration_ok = true;
   end
 

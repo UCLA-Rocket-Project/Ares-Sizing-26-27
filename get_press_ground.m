@@ -24,7 +24,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
   T_fuel              = params.T_fuel;              % K
   T_ox          = params.T_ox;          % K
   T_nitrogen            = params.T_N2;            % K initial bottle temp
-  polytropic_n = params.polytropic_n; 
+  polytropic_n = params.polytropic_n_N2; 
 
   % Initialize outputs
   out.max_domes = 0;
@@ -70,7 +70,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
      total_bottle_volume = bottle_number * bottle_volume; % m^3, all bottles in the bank
 
    rho_fuel_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', T_fuel, 'P', tank_pressure, 'nitrogen'); %kg/m^3
-   rho_ox_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', T_ox, 'P', tank_pressure, 'nitrogen'); %kg/m^3
+   rho_ox_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', 200, 'P', tank_pressure, 'nitrogen'); %kg/m^3
 
     prop_mass_kg = Prop.prop_mass / 2.20462; % lbm to kg
     fuel_mass_t = prop_mass_kg / (1 + OF); 
@@ -95,6 +95,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
     rho_old = 11 / bottle_volume; % kg/m^
     T_old = T_nitrogen;
     bottle_p = GN2_pressure;
+    idx_cross = [];
 
     while fuel_mass_t > 0 && ox_mass_t > 0
 
@@ -151,7 +152,9 @@ function [out, status] = get_press_ground(Prop, Press, params)
     t = t + delta_t; 
     i = i + 1;
 
-    if bottle_p <= tank_pressure
+    if isempty(idx_cross) && bottle_p <= tank_pressure
+        idx_cross = i +1;
+        t_cross = (i + 1) * delta_t;
         fprintf('Bottle drops to tank pressure at t = %.4f s\n', t);
         break
     end
@@ -162,12 +165,12 @@ function [out, status] = get_press_ground(Prop, Press, params)
   % checks if the bottle actually last whole burn
 
   fprintf('Burn time: %.4f s\n', burn_time);
-  if t < burn_time
+  if ~isempty(idx_cross) && t_cross < burn_time
     fprintf('bottle reaches tank pressure before burn ends (short by %.4f s)\n', burn_time - t);
     duration_ok = false;
-    status = -1; % Sentinel: Reaches tank pressure before burn ends
+    status = -1; 
   else
-    fprintf('bottle covers burn time (margin: %.4f s)\n', t - burn_time);
+    fprintf('bottle covers burn time\n');
     duration_ok = true;
   end
 
@@ -236,15 +239,40 @@ function [out, status] = get_press_ground(Prop, Press, params)
   fprintf('Total number of domes needed: %d\n', max_domes);
 
 % Graph GN2 bottle pressure over time
- t_array = (0:length(bottle_p)-1) * delta_t;
+ t_array = (0:length(bottle_p_array)-1) * delta_t;
 
- figure;
- plot(t_array, bottle_p_array / 6894.76, 'LineWidth', 1.5);
- yline(tank_pressure/6894.76, '--r', 'Tank pressure');
- xline(burn_time, '--k', 'Burn time');
- xline(t, ':b', 'Reaches tank pressure');
- xlabel('Time [s]'); ylabel('GN2 bottle pressure [psi]');
- title('GN2 Bottle Pressure vs Time'); grid on;
+ gn2_psi = bottle_p_array / 6894.76;
+ pc_psi = ones(size(t_array)) * Prop.Pc;
+ tank_psi = ones(size(t_array)) * Press.tank_press;
+
+ if ~isempty(idx_cross)
+     tank_psi(idx_cross:end) = gn2_psi(idx_cross:end);
+ end
+
+ figure('Color', 'w');
+ hold on;
+
+ plot(t_array, gn2_psi, 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2, 'DisplayName', 'GN2 Bottle Pressure');
+ plot(t_array, tank_psi, 'Color', [0.9290 0.6940 0.1250], 'LineWidth', 2, 'DisplayName', 'Tank Pressure');
+ plot(t_array, pc_psi, 'Color', [0.0000 0.4470 0.7410], 'LineWidth', 2, 'DisplayName', 'Chamber Pressure');
+
+ xlabel('Time (s)');
+ ylabel('Pressure (psia)');
+ title('Ground System Pressures vs. Time');
+
+ grid on;
+ ax = gca;
+ ax.Color = 'w';
+ ax.XColor = 'k';
+ ax.YColor = 'k';
+ ax.GridColor = 'k';
+ ax.GridAlpha = 0.15;
+
+ max_p = max([gn2_psi, tank_psi, pc_psi]);
+ yticks(0:500:ceil(max_p/500)*500);
+
+ legend('Location', 'northeast');
+ hold off;
 
   % Pack structure output
   out.max_domes = max_domes;
