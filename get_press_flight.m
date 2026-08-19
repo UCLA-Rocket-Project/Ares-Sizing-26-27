@@ -239,29 +239,44 @@ m_helium_total = helium_mass_available + (rho_fuel_ullage_gas * V_fuel_ullage_t)
  %% Graph
 
   t_array = (0:length(bottle_p_array)-1) * delta_t;
-
-  figure;
-  subplot(3,1,1);
-  plot(t_array, bottle_p_array/6894.76, 'LineWidth', 1.5);
-  yline(tank_pressure/6894.76, '--r', 'Tank pressure (dome setpoint)');
-  xline(burn_time, '--k', 'Nominal burn time');
-  if ~isempty(t_cross)
-    xline(t_cross, ':b', 'Enters blowdown');
-  end
-  xlabel('Time [s]'); ylabel('COPV pressure [psi]');
-  title('COPV Pressure vs Time'); grid on;
-
-  subplot(3,1,2);
-  plot(t_array, temp_array, 'LineWidth', 1.5);
-  xlabel('Time [s]'); ylabel('COPV temperature [K]');
-  title('COPV Temperature vs Time'); grid on;
-
-  subplot(3,1,3);
   t_solved = t_array(1:length(Pc_array));
-  plot(t_solved, Pc_array/6894.76, 'LineWidth', 1.5);
-  xlabel('Time [s]'); ylabel('Chamber pressure [psi]');
-  title('Chamber Pressure vs Time (Phase 1 nominal, Phase 2 solved)'); grid on;
 
+  copv_psi = bottle_p_array / 6894.76; 
+  pc_psi = Pc_array / 6894.76;
+
+  tank_psi = ones(size(t_solved)) * Press.tank_press;
+
+  if ~isempty(idx_cross)
+      tank_psi(idx_cross:end) = copv_psi(idx_cross:length(t_solved));
+  end
+ 
+ % create figure
+
+  figure('Color', 'w'); 
+  hold on;
+
+  plot(t_array, copv_psi, 'Color', [0.8500 0.3250 0.0980], 'LineWidth', 2, 'DisplayName', 'COPV Pressure');
+ plot(t_solved, tank_psi, 'Color', [0.9290 0.6940 0.1250], 'LineWidth', 2, 'DisplayName', 'Tank Pressure');
+ plot(t_solved, pc_psi,  'Color', [0.0000 0.4470 0.7410], 'LineWidth', 2, 'DisplayName', 'Chamber Pressure');
+
+ xlabel('Time [s]');
+ ylabel('Pressure [psia]');
+ title('System Pressures vs. Time');
+
+ grid on;
+ ax = gca;
+ ax.Color = 'w';     
+ ax.XColor = 'k';
+ ax.YColor = 'k';   
+ ax.GridColor = 'k';  
+ ax.GridAlpha = 0.15;
+
+ max_p = max([copv_psi, tank_psi, pc_psi]);
+ yticks(0:500:ceil(max_p/500)*500);
+
+ legend('Location', 'northeast');
+ hold off;
+  
  %% Pack structure output
 
   out.max_domes = max_domes;
