@@ -30,13 +30,13 @@ function p = input_parameters()
 
     p.ullage = 0.05;
 
-    p.T_He = 298; % K initial He temp
+    p.T_He = 298; % K initial He tempterm
 
     p.P_He_init = 4500; %psi COPV pressure
 
-    p.GN2_bottle_orifice_area = 2.027E-5; % m^2 
+    p.GN2_bottle_orifice_area = 1.7719053832789E-5; % m^2, from CGA V-1 2013 Page 55 (CGA 580) nipple diameter https://www.scribd.com/document/967862515/CGA-V1-2013
 
-    p.Dome_orifice_area = 2.677414E-5; % m^2 
+    p.Dome_orifice_area = 2.6804825641854E-5; % m^2, from Aqua 873-D Cv = 0.8, Diameter = 0.23in
 
     p.T_N2 = 293; %K
 
