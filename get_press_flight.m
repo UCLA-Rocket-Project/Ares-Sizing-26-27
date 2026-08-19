@@ -1,7 +1,6 @@
 function [out, status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, A_throat, A_exit)
 
   % Pressurant Sizing Function for Helium / Flight COPV
-% Pressurant Sizing Script for Helium / Flight COPV 
 
 % assumes choked flow at dome, checks if vdot_gas > vdot_prop, adds to dome # if not
 
@@ -30,8 +29,6 @@ function [out, status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, 
   out.t_cross = 0;
   out.t_blowdown = 0;
   status = 0; % 0: Success
-
-  R_helium = 2077; % J/(kg*K), specific gas constant for Helium
 
   rho_helium_full = py.CoolProp.CoolProp.PropsSI('D', 'P', COPV_pressure, 'T', T_helium, 'helium'); % kg/m^3
   helium_mass_available = COPV_volume * rho_helium_full; % kg

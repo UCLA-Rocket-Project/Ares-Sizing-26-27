@@ -32,7 +32,7 @@ function p = input_parameters()
 
     p.T_He = 298; % K initial He temp
 
-    p.P_He_init = 4500; %psi COPV pressure
+    p.P_He_init = 4700; %psi COPV pressure
 
     p.GN2_bottle_orifice_area = 2.027E-5; % m^2 
 
@@ -43,10 +43,10 @@ function p = input_parameters()
     % feed/injector CdAs
     % taken from config.py in Michael's engine balance script
 
-    p.CdA_fuel_feed = 0.00005075932546; % m^2
-    p.CdA_ox_feed = 0.0000421133315; % m^2
-    p.CdA_fuel_injector = 1.9125E-05; % m^2
-    p.CdA_ox_injector = 2.7687E-05; % m^2
+    p.CdA_fuel_feed = 8.860385824464009E-5; % m^2
+    p.CdA_ox_feed = 5.660629324484712E-5; % m^2
+    p.CdA_fuel_injector = 0.00003687789023; % m^2
+    p.CdA_ox_injector = 0.00004918255865; % m^2
  
     % Series-combined CdA (feed + injector)
     
