@@ -24,6 +24,7 @@ function [out, status] = get_press_ground(Prop, Press, params)
   T_fuel              = params.T_fuel;              % K
   T_ox          = params.T_ox;          % K
   T_nitrogen            = params.T_N2;            % K initial bottle temp
+  polytropic_n = params.polytropic_n; 
 
   % Initialize outputs
   out.max_domes = 0;
