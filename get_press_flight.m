@@ -64,7 +64,10 @@ burn_time = prop_mass_kg / mdot; %s
 rho_fuel_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', T_fuel, 'P', tank_pressure, 'helium'); %kg/m^3
 rho_ox_ullage_gas = py.CoolProp.CoolProp.PropsSI('D', 'T', 200, 'P', tank_pressure, 'helium'); % kg/m^3
 
-m_helium_total = helium_mass_available + (rho_fuel_ullage_gas * V_fuel_ullage_t) + (rho_ox_ullage_gas * V_ox_ullage_t); 
+m_helium_total = helium_mass_available;
+
+%+ (rho_fuel_ullage_gas * V_fuel_ullage_t) + (rho_ox_ullage_gas * V_ox_ullage_t); 
+% no longer adding this ^ term bc no press top off / accounting for iso valve
 
  % initializing
 
