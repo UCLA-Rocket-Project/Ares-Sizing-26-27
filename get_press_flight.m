@@ -276,6 +276,28 @@ ax.GridAlpha = 0.15;
 legend('Location', 'best');
 hold off;
 
+%temp
+
+figure('Color', 'w');
+hold on;
+
+plot(t_array, temp_array, 'Color', [0.4940 0.1840 0.5560], 'LineWidth', 2, 'DisplayName', 'COPV Temperature');
+
+xlabel('Time (s)');
+ylabel('Temperature(K)');
+title('COPV Tempe vs. Time');
+
+grid on;
+ax = gca;
+ax.Color = 'w';
+ax.XColor = 'k';
+ax.YColor = 'k';
+ax.GridColor = 'k';
+ax.GridAlpha = 0.15;
+
+legend('Location', 'northeast');
+hold off;
+
 % pressures 
 
   figure('Color', 'w'); 
