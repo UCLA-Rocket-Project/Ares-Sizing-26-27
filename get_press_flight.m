@@ -263,7 +263,7 @@ yline(vdot_tot, '--', 'Color', [0.0000 0.4470 0.7410], 'LineWidth', 2, 'DisplayN
 
 xlabel('Time (s]');
 ylabel('Volumetric flow rate (m^3/s)');
-title('Dome choked vdot vs. Required vdot');
+title('Dome choked vdot vs. Required vdot (flight)');
 
 grid on;
 ax = gca;
