@@ -12,9 +12,9 @@ function [out, status] = get_press_ground(Prop, Press, params)
 
   % Unpack inputs from struct
   mdot          = Prop.mdot / 2.20462;          % lbm/s to kg/s
-  tank_volume         = Press.fuel_tank_volume + Press.ox_tank_volume; % m^3
-  fuel_volume         = Press.fuel_tank_volume;         % m^3
-  ox_volume     = Press.ox_tank_volume;     % m^3
+  tank_volume         = 2 * 0.03823102; % m^3
+  fuel_volume         = 0.03823102;         % m^3
+  ox_volume     = 0.03823102;     % m^3
   OF                = Prop.OF;
   tank_pressure   = Press.tank_press * 6894.76;   % Pa
   GN2_pressure      = 2000 * 6894.76;      % Pa
