@@ -49,10 +49,10 @@ writecell(col_names, filtered_csv_path);
 %% Sweep Ranges
 
 % 
-mass_dist = 85:5:100; %lbm
-OF_dist = 1.2:0.02:1.4;
-Pc_dist = 200:10:600; %psi
-eps_dist = 3:0.5:5; 
+mass_dist = 100; %lbm
+OF_dist = 1.3;
+Pc_dist = 375; %psi
+eps_dist = 5; 
 
 it_ct = numel(mass_dist) * numel(OF_dist) * numel(Pc_dist) * numel(eps_dist);
 
@@ -98,7 +98,7 @@ for prop_mass = mass_dist
 
                 %% get_PV_mel
 
-                PV_mel = get_PV_mel(prop_mass, OF, Press.tank_press, Press.V_He);
+                PV_mel = get_PV_mel(Press, Press.tank_press, Press.V_He);
 
                 if isnumeric(PV_mel) && PV_mel == -1
                     fail_code = -1;
@@ -269,7 +269,7 @@ best_eps = results_filtered.eps(opt_idx);
 Prop = struct('OF', best_OF, 'Pc', best_Pc, 'eps', best_eps, 'prop_mass', best_prop_mass);
 Prop = run_CEA(Prop, params);
 [Prop, Press] = run_press(Prop, params);
-PV_mel = get_PV_mel(best_prop_mass, best_OF, Press.tank_press, Press.V_He);
+PV_mel = get_PV_mel(Press, Press.tank_press, Press.V_He);
 
 
 %% Press sizing (WIP)

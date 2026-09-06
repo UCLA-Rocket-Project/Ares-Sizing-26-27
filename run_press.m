@@ -85,10 +85,16 @@ function [Prop, Press] = run_press(Prop, params)
 
     % find tank vollumes by using mass, density, and ullage
 
+    fuel_volume = (fuel_mass_SI / params.fuel_density);
+    ox_volume = (ox_mass_SI / params.ox_density);
+    fprintf('Fuel liquid volume: %.6g m^3\n', fuel_volume);
+    fprintf('Ox liquid volume: %6g m^3\n', ox_volume);
     fuel_tank_volume = (fuel_mass_SI / params.fuel_density) / (1 - params.ullage); % m^3
     ox_tank_volume   = (ox_mass_SI / params.ox_density) / (1 - params.ullage); % m^3
     Press.fuel_tank_volume = fuel_tank_volume;
     Press.ox_tank_volume = ox_tank_volume;
+     fprintf('Fuel tank volume: %.6g m^3\n', Press.fuel_tank_volume);
+    fprintf('Ox tank volume: %6g m^3\n', Press.ox_tank_volume);
 
     tank_press_pa = Press.tank_press * 6894.76; % psi to Pa (CoolProp wants Pa)
 

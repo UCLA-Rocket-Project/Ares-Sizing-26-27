@@ -7,7 +7,7 @@
 % Outputs: Struct of PV lengths and masses or -1 (COPV not possible), 
 % -2 (tanks unable to withstand pressure)
 
-function PV_mel = get_PV_mel(prop_mass, OF, p_operating,press_v)
+function PV_mel = get_PV_mel(Press, p_operating,press_v)
 
 % First, check if a COPV is possible (return -1 if not)
 copv_volumes = [9,12]; % L
@@ -73,23 +73,31 @@ end
 PV_mel.cap_wall = cap_t; % in
 
 % Calculate end cap volume and mass
-a = r_o - PV_mel.cap_wall; % in
+a = 3.8; % in
 cap_vol = (1/3*pi*a^3)+(pi*r_i^2*1.5); % in^3 (crown + tangent volume)
 cap_mass = 0.0975 * (pi/24*((r_o*2)^3-(a*2)^3) + pi*r_o*(r_o^2-r_i^2)); % lbm
 cap_mass = cap_mass * 1.3; % mark up factor based on pandora
 
 
 % Calculate barrel length and mass
-fuel_mass = prop_mass/(1+OF); % lbm
-ox_mass = OF*fuel_mass; % lbm
-fuel_density = 0.75*0.0285 + 0.25*0.036; % lb/in^3 for 75/25 ethanol/water
-ox_density = 0.041; % lb/in^3
-fuel_vol = fuel_mass/fuel_density; % in^3
-ox_vol = ox_mass/ox_density; % in^3
-ullage = 0.05;
+%fuel_mass = prop_mass/(1+OF); % lbm
+%ox_mass = OF*fuel_mass; % lbm
+%fuel_density = 0.75*0.0285 + 0.25*0.036; % lb/in^3 for 75/25 ethanol/water
+%ox_density = 0.041; % lb/in^3
+%fuel_vol = fuel_mass/fuel_density; % in^3
+%ox_vol = ox_mass/ox_density; % in^3
+%ullage = 0.05;
 
-fuel_length = (fuel_vol + ullage*fuel_vol - 2*cap_vol)/pi/(r_i^2); % in
-ox_length = (ox_vol + ullage*ox_vol - 2*cap_vol)/pi/(r_i^2); % in
+%fuel_length = (fuel_vol + ullage*fuel_vol - 2*cap_vol)/pi/(r_i^2); % in
+%ox_length = (ox_vol + ullage*ox_vol - 2*cap_vol)/pi/(r_i^2); % in
+
+% Calc correct lengths
+
+fuel_vol = Press.fuel_tank_volume * 61023.7;
+ox_vol = Press.ox_tank_volume * 61023.7;
+
+fuel_length = (fuel_vol - 2 * cap_vol) / (pi * (r_i ^2));
+ox_length = (ox_vol - 2 * cap_vol) / (pi * (r_i ^ 2));
 
 % Add results to struct
 PV_mel.fuel_l = fuel_length;

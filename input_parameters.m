@@ -8,11 +8,11 @@ function p = input_parameters()
 
     p.T_fuel = 300; % K
 
-    p.T_ox = 94; % K
+    p.T_ox = 98; % K
 
-    p.P_fuel_tank = 600 * 6894; %pa
+    p.P_fuel_tank = 488 * 6894; %pa
 
-    p.P_ox_tank = 600 * 6894; %pa
+    p.P_ox_tank = 488 * 6894; %pa
 
     % initial pressure inputs for CoolProp density call, not used
     % Tank pressure calculated from run_press used in main
