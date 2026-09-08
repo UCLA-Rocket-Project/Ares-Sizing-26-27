@@ -105,7 +105,7 @@ function get_RSE_files(Prop, params, dry_mass, PV_mel, Cd_data, M_data, file_nam
     thrust_dia_mm = 127; % mm
 
     thrust_header = createEngineHeader(mean(thrust_N_log), burn_time, thrust_code, thrust_dia_mm, ...
-        0, max(PV_mel.fuel_l, PV_mel.ox_l)*25.4, max(thrust_N_log), 0, company);
+        0, 14.93*25.4, max(thrust_N_log), 0, company);
 
     %% Write RSE files
     thrustFile = fopen(fullfile(out_dir, thrust_code + ".RSE"), 'w');

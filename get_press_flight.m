@@ -81,6 +81,7 @@ m_helium_total = helium_mass_available;
 
   bottle_p_array = COPV_pressure; % Pa
   temp_array = T_helium; % K
+  mass_copv_array = helium_mass_available; %kg
   thrust_array = []; % N
   Pc_array = []; % Pa
   mdot_array = []; % kg/s
@@ -145,6 +146,8 @@ m_helium_total = helium_mass_available;
     if m_copv_now <= 0
       break
     end
+
+    mass_copv_array(i+1) = m_copv_now; 
 
     % COPV pressure
     %  density from remaining mass in COPV & volume
@@ -339,5 +342,6 @@ hold off;
   out.Pc_array = Pc_array; % Pa
   out.mdot_array = mdot_array; % kg/s
   out.duration_ok = duration_ok;
+  out.mass_copv_array = mass_copy_array;
 
 end
