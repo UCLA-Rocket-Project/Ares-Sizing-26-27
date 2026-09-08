@@ -8,7 +8,7 @@ function p = input_parameters()
 
     p.T_fuel = 300; % K
 
-    p.T_ox = 94; % K
+    p.T_ox = 94; % 90.17 K used in CEA
 
     p.P_fuel_tank = 600 * 6894; %pa
 

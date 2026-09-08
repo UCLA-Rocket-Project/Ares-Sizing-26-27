@@ -1,3 +1,4 @@
+%% 
 % main
 
 % Sweeps prop mass, OF, Pc, and area ratio (eps). 
@@ -24,7 +25,7 @@ if ~exist(out_dir, 'dir')
 end
 
 data_csv_path = fullfile(out_dir, 'output.csv'); % every iter
-filtered_csv_path = fullfile(out_dir, 'output_filtered.csv'); % for succesful iterations (meets all filters)
+filtered_csv_path = fullfile(out_dir, 'output_filtered.csv'); % for successful iterations (meets all filters)
 log_path = fullfile(out_dir, 'log.txt');
 
 params = input_parameters();
@@ -45,167 +46,152 @@ writecell(col_names, data_csv_path);
 writecell(col_names, filtered_csv_path);
 
 
-
 %% Sweep Ranges
-
-% 
 mass_dist = 85:5:100; %lbm
 OF_dist = 1.2:0.02:1.4;
 Pc_dist = 200:10:600; %psi
-eps_dist = 3:0.5:5; 
+eps_dist = 3:0.5:5;
 
-it_ct = numel(mass_dist) * numel(OF_dist) * numel(Pc_dist) * numel(eps_dist);
-
-%% Sweep
-
-tic;
-it = 0;
-
-% CSV write for a small batch of rows in memory
-% cleaner than writing every iteration
-% less memory use than keeping every row and writing at the end
-% changed to 4 nested loops (like last year) instead of running main per combo and appending 
-
-flush_every = 50;
-buffer_all={}; 
-buffer_pass ={};
+%mass_dist = 95:5:100; %lbm
+%OF_dist = 1.3:0.02:1.4;
+%Pc_dist = 200:10:400; %psi
+%eps_dist = 4:0.5:5;
 
 tol = 0.1;
 max_iter = 50;
 
-for prop_mass = mass_dist
-    for OF = OF_dist
-        for Pc = Pc_dist
-            for eps = eps_dist
-                
-                it = it + 1;
-                fail_code = 0 ;
+%% Preload Cd vs Mach data once per prop_mass
+cd_files = containers.Map('KeyType', 'double', 'ValueType', 'any');
+for m = mass_dist
+    switch m
+        case 85
+            fname = 'MvsCd_data_85.CSV';
+        case 90
+            fname = 'MvsCd_data_90.CSV';
+        case 95
+            fname = 'MvsCd_data_95.CSV';
+        otherwise
+            fname = 'MvsCd_data_100.csv';
+    end
+    data = readmatrix(fullfile(base_dir, 'input', fname));
+    [M_u, uniq_idx] = unique(data(:,1));
+    cd_files(m) = struct('M_data', M_u, 'Cd_data', data(uniq_idx, 2));
+end
 
-                %defaults so that row doesnt return error if fail code occurs
+%% Linear index into grid
+[MM, OO, PP, EE] = ndgrid(mass_dist, OF_dist, Pc_dist, eps_dist);
+combos = [MM(:), OO(:), PP(:), EE(:)];
+it_ct = size(combos, 1);
 
-                Prop = struct('OF', OF, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
-                Press = struct('tank_press', NaN, 'V_He', NaN);
-                dry_mass = NaN;
-                apogee = NaN;
+results = cell(it_ct, 1);
 
-                %% run_CEA
+h = waitbar(0, 'Running');
+dq = parallel.pool.DataQueue;
+afterEach(dq, @(~) updateWaitbar(h, it_ct));
 
-                Prop = run_CEA(Prop, params);
+tic;
+parfor it = 1:it_ct
+    prop_mass = combos(it, 1);
+    OF        = combos(it, 2);
+    Pc        = combos(it, 3);
+    eps       = combos(it, 4);
 
-                %% run_press
+    fail_code = 0;
+    Prop  = struct('OF', OF, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
+    Press = struct('tank_press', NaN, 'V_He', NaN);
+    dry_mass = NaN;
+    apogee = NaN;
 
-                [Prop, Press] = run_press(Prop, params);
+    %% run_CEA
+    Prop = run_CEA(Prop, params);
 
-                %% get_PV_mel
+    %% run_press
+    [Prop, Press] = run_press(Prop, params);
 
-                PV_mel = get_PV_mel(prop_mass, OF, Press.tank_press, Press.V_He);
+    %% get_PV_mel
+    PV_mel = get_PV_mel(prop_mass, OF, Press.tank_press, Press.V_He);
 
-                if isnumeric(PV_mel) && PV_mel == -1
-                    fail_code = -1;
-                    PV_mel = struct('fuel_l', NaN, 'ox_l', NaN, 'tank_wall', NaN);
+    if isnumeric(PV_mel) && PV_mel == -1
+        fail_code = -1;
+        PV_mel = struct('fuel_l', NaN, 'ox_l', NaN, 'tank_wall', NaN);
+    elseif isnumeric(PV_mel) && PV_mel == -2
+        fail_code = -2;
+        PV_mel = struct('fuel_l', NaN, 'ox_l', NaN, 'tank_wall', NaN);
+    end
 
-                elseif isnumeric(PV_mel) && PV_mel == -2
-                    fail_code = -2;
-                    PV_mel = struct('fuel_l', NaN, 'ox_l', NaN, 'tank_wall', NaN);
+    %% get_ShockLoads & get_recLoads (iterate dry mass until unchanging)
+    if fail_code == 0
+        dry_mass = 120; % Initializing dry mass
+        old_dryMass = 0; % Set old dry mass to zero for the first iteration
+        iter = 0;
 
-                end
+        while abs(dry_mass - old_dryMass) > tol && iter < max_iter
+            old_dryMass = dry_mass; % Update old dry mass
 
-                %% get_ShockLoads & get_recLoads
-                % Iterate through loads and dry mass until unchanging
+            % Calculate new dry mass based on current shock loads
+            [f_drogue, f_main] = get_ShockLoads(dry_mass);
+            recLoads = get_highestLoad(f_drogue, f_main, PV_mel);
+            dry_mass = get_dryMass(recLoads, PV_mel);
+            iter = iter + 1;
+        end
 
-                if fail_code == 0 
-                dry_mass = 120; % Initializing dry mass
-                old_dryMass = 0; % Set old dry mass to zero for the first iteration
-                iter = 0;
-
-               while abs(dry_mass - old_dryMass) > tol && iter < max_iter
-                   old_dryMass = dry_mass; % Update old dry mass
-  
-                   % Calculate new dry mass based on current shock loads
-                     [f_drogue, f_main] = get_ShockLoads(dry_mass);
-                 recLoads = get_highestLoad(f_drogue, f_main, PV_mel);
-                  dry_mass = get_dryMass(recLoads,PV_mel); 
-                  iter = iter + 1;
-               end
-
-                    if iter == max_iter
-
-                    fail_code = -3; 
-
-                    end
-
-                end
-
-                %% get_apogee 
-                if prop_mass == 85
-                    data = readmatrix(fullfile(base_dir, 'MvsCd_data_85.csv'));
-                    Cd_data = data(:,2);
-                    M_data = data(:,1);
-                elseif prop_mass == 90
-                    data = readmatrix(fullfile(base_dir, 'MvsCd_data_90.csv'));
-                    Cd_data = data(:,2);
-                    M_data = data(:,1);
-                elseif prop_mass == 95
-                    data = readmatrix(fullfile(base_dir, 'MvsCd_data_95.csv'));
-                    Cd_data = data(:,2);
-                    M_data = data(:,1);
-                else
-                    data = readmatrix(fullfile(base_dir,'MvsCd_data_100.csv'));
-                    Cd_data = data(:,2);
-                    M_data = data(:,1); 
-                end
-
-                [M_data, uniq_idx] = unique(M_data);
-                Cd_data = Cd_data(uniq_idx);
-            
-
-                % Calculate apogee and vehicle length
-                if fail_code == 0
-                       apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass); % ft
-              
-                       if apogee == -3
-                           fail_code = -4;
-                       end
-                else
-                    apogee = fail_code;
-                end
-
-                vehicle_length = 158.5 + PV_mel.fuel_l + PV_mel.ox_l; % in
-                % ^ 158.5 in is Pandora's length without tank barrels
-
-
-                %% Row assembly and write
-
-                row = {prop_mass, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, Press.tank_press, Press.V_He, dry_mass, PV_mel.fuel_l, ...
-                    PV_mel.ox_l, PV_mel.tank_wall, vehicle_length, apogee, fail_code};
-
-                buffer_all(end+1, :) = row;
-                % every row,  gets periodically written and cleared every iteration to output.csv
-
-                if fail_code == 0
-                    buffer_pass(end+1, :) = row; 
-                    % rows that pass the filters, written to filtered.csv
-                    
-                end
-
-                if mod(it, flush_every) ==0 || it == it_ct
-                    if ~isempty(buffer_all)
-                        writecell(buffer_all, data_csv_path, 'WriteMode','append');
-                        buffer_all = {};
-                    end
-                    
-                    if ~isempty(buffer_pass)
-                        writecell(buffer_pass, filtered_csv_path, 'WriteMode', 'append');
-                        buffer_pass = {};
-                    end
-                    fprintf(' %d / %d iterations complete\n,', it, it_ct);
-
-                end
-            end
+        if iter == max_iter
+            fail_code = -3;
         end
     end
+
+    %% get_apogee
+    cd_s = cd_files(prop_mass);
+    M_data  = cd_s.M_data;
+    Cd_data = cd_s.Cd_data;
+
+    if fail_code == 0
+        apogee = get_apogee(Prop, params, Cd_data, M_data, dry_mass); % ft
+        if apogee == -3
+            fail_code = -4;
+        end
+    else
+        apogee = fail_code;
+    end
+
+    vehicle_length = 158.5 + PV_mel.fuel_l + PV_mel.ox_l; % in
+    % ^ 158.5 in is Pandora's length without tank barrels
+
+    %% Row assembly
+    results{it} = {prop_mass, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, ...
+        Press.tank_press, Press.V_He, dry_mass, PV_mel.fuel_l, PV_mel.ox_l, PV_mel.tank_wall, ...
+        vehicle_length, apogee, fail_code};
+
+    send(dq, 1);
 end
 elapsed_time = toc;
+
+close(h);
+
+function updateWaitbar(h, N)
+    persistent completed;
+    if isempty(completed) || nargin == 0
+        completed = 0;
+    end
+    completed = completed + 1;
+    waitbar(completed / N, h, sprintf('Progress: %d / %d', completed, N));
+    if completed >= N
+        completed = []; % Reset for future use
+    end
+end
+
+
+%% Serial write after the parallel loop
+buffer_all = vertcat(results{:});
+writecell(buffer_all, data_csv_path, 'WriteMode', 'append');
+
+pass_mask = cellfun(@(r) r{end} == 0, results);
+buffer_pass = buffer_all(pass_mask, :);
+if ~isempty(buffer_pass)
+    writecell(buffer_pass, filtered_csv_path, 'WriteMode', 'append');
+end
+
+fprintf('%d / %d iterations complete\n', it_ct, it_ct);
 %% Optimized Output
 
 results_filtered = readtable(filtered_csv_path);
@@ -239,7 +225,7 @@ else
         'Tank wall thickness: %.4f in\n'...
         'Vehicle Length: %.2f in\n'], ...
         repmat('=',1,80), repmat('=',1,80), ...
-        it, height(results_filtered), elapsed_time, ...
+        it_ct, height(results_filtered), elapsed_time, ...
         max_apogee, ...
         results_filtered.prop_mass(opt_idx), results_filtered.thrust(opt_idx), ...
         results_filtered.t_b(opt_idx), results_filtered.mdot(opt_idx), ...
@@ -305,13 +291,13 @@ fprintf('ITS mass: %.2f lb\n', tube_masses.its_m);
 %% RSE File Gen
 
 if best_prop_mass == 85
-data = readmatrix(fullfile(base_dir, 'MvsCd_data_85.csv'));
+data = readmatrix(fullfile(base_dir, 'input/MvsCd_data_85.CSV'));
 elseif best_prop_mass == 90
-data = readmatrix(fullfile(base_dir, 'MvsCd_data_90.csv'));
+data = readmatrix(fullfile(base_dir, 'input/MvsCd_data_90.CSV'));
 elseif best_prop_mass == 95
-data = readmatrix(fullfile(base_dir, 'MvsCd_data_95.csv'));
+data = readmatrix(fullfile(base_dir, 'input/MvsCd_data_95.CSV'));
 else
-data = readmatrix(fullfile(base_dir, 'MvsCd_data_100.csv'));
+data = readmatrix(fullfile(base_dir, 'input/MvsCd_data_100.CSV'));
 end
 Cd_data = data(:,2);
 M_data = data(:,1);
