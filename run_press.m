@@ -9,7 +9,7 @@
 % Inputs:  Prop (OF, Pc, mdot, mdot_fuel, mdot_ox), params
 % Outputs: Press.tank_press [psi], Press.V_He [m^3]
 
-function [Prop, Press] = run_press(Prop, params)
+function [Prop, Press] = run_press(Prop, params, fuel_density)
 
    % mdot_fuel_SI = Prop.mdot_fuel / 2.20462; % lbm/s to kg/s
    %  mdot_ox_SI = Prop.mdot_ox / 2.20462; %lbm/s to kg/s
@@ -40,7 +40,7 @@ function [Prop, Press] = run_press(Prop, params)
   r_o_SI = 4 * 0.0254; % in to m 
   A_tank_SI = pi * r_o_SI ^2; % m^2
 
-  h_fuel_liquid = fuel_mass_SI / params.fuel_density / A_tank_SI; % m, in-tank column only
+  h_fuel_liquid = fuel_mass_SI / fuel_density / A_tank_SI; % m, in-tank column only
   h_ox_liquid  = ox_mass_SI / params.ox_density / A_tank_SI;   % m
 
   % Feed line height (tank outlet to injector face), from heritage MEL
@@ -55,7 +55,7 @@ function [Prop, Press] = run_press(Prop, params)
 
   g = 9.81; % m/s^2 at liftoff
 
-  dP_head_fuel_pa = params.fuel_density * g * h_fuel_total; % Pa
+  dP_head_fuel_pa = fuel_density * g * h_fuel_total; % Pa
   dP_head_ox_pa  = params.ox_density * g * h_ox_total;   % Pa
 
   dP_head_fuel = dP_head_fuel_pa * 0.000145038; % Pa to psi
@@ -85,7 +85,7 @@ function [Prop, Press] = run_press(Prop, params)
 
     % find tank vollumes by using mass, density, and ullage
 
-    fuel_tank_volume = (fuel_mass_SI / params.fuel_density) / (1 - params.ullage); % m^3
+    fuel_tank_volume = (fuel_mass_SI / fuel_density) / (1 - params.ullage); % m^3
     ox_tank_volume   = (ox_mass_SI / params.ox_density) / (1 - params.ullage); % m^3
     Press.fuel_tank_volume = fuel_tank_volume;
     Press.ox_tank_volume = ox_tank_volume;

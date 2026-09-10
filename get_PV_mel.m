@@ -7,7 +7,7 @@
 % Outputs: Struct of PV lengths and masses or -1 (COPV not possible), 
 % -2 (tanks unable to withstand pressure)
 
-function PV_mel = get_PV_mel(prop_mass, OF, p_operating,press_v)
+function PV_mel = get_PV_mel(prop_mass, fuel_density, OF, p_operating,press_v)
 
 % First, check if a COPV is possible (return -1 if not)
 copv_volumes = [9,12]; % L
@@ -82,7 +82,7 @@ cap_mass = cap_mass * 1.3; % mark up factor based on pandora
 % Calculate barrel length and mass
 fuel_mass = prop_mass/(1+OF); % lbm
 ox_mass = OF*fuel_mass; % lbm
-fuel_density = 0.75*0.0285 + 0.25*0.036; % lb/in^3 for 75/25 ethanol/water
+% fuel_density = 0.75*0.0285 + 0.25*0.036; % lb/in^3 for 75/25 ethanol/water
 ox_density = 0.041; % lb/in^3
 fuel_vol = fuel_mass/fuel_density; % in^3
 ox_vol = ox_mass/ox_density; % in^3

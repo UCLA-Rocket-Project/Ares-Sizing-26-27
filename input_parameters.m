@@ -24,9 +24,9 @@ function p = input_parameters()
 
     % run_press computes m^3 tank volume using kg/m^3 densities, then converts to L for get_PV_mel
     
-    p.eth_ratio = 0.75;
+    % p.eth_ratio = 0.75;
 
-    p.fuel_density = mass_fraction(p.eth_ratio, p.ethanol_density, p.water_density); % kg/m3
+    % p.fuel_density = mass_fraction(p.eth_ratio, p.ethanol_density, p.water_density); % kg/m3
 
     p.ullage = 0.05;
 

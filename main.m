@@ -15,6 +15,20 @@
 
 % Plotting results: graph of vehicle length and prop mass vs apogee
 
+% MEOP: 600 psia
+% Chamber Pressure: 370 psia
+% Manifold Pressure: 444
+% Thrust: 1450
+% OF: 1.4
+% Mdot: 6.639 lbm/s
+% area ratio: 5
+% eth/water: 75/25
+% Burn time: 15.06
+% Isp: 219s
+% Prop mass: 100lbs
+% Ctau efficiency: 98%
+% C* efficiency: 90%
+
 %% Setup
 % CSV path handling and writing
 
@@ -30,7 +44,7 @@ log_path = fullfile(out_dir, 'log.txt');
 
 params = input_parameters();
 
-col_names = {'prop_mass', 'OF', 'Pc', 'eps', 'mdot','thrust', 'Isp', 't_b','tank_press', 'V_He', 'dry_mass', ...
+col_names = {'prop_mass', 'eth_ratio', 'OF', 'Pc', 'eps', 'mdot','thrust', 'Isp', 't_b','tank_press', 'V_He', 'dry_mass', ...
             'fuel_tank_length', 'ox_tank_length', 'tank_wall', 'vehicle_length', 'apogee', 'fail_code'};
 
 %Filter summary
@@ -47,10 +61,11 @@ writecell(col_names, filtered_csv_path);
 
 
 %% Sweep Ranges
-mass_dist = 85:5:100; %lbm
-OF_dist = 1.2:0.02:1.4;
-Pc_dist = 200:10:600; %psi
-eps_dist = 3:0.5:5;
+% mass_dist = 85:5:100; %lbm
+OF_dist = 1.2:0.02:1.6;
+% Pc_dist = 200:10:600; %psi
+% eps_dist = 3:0.5:5;
+eth_dist = 0.75:0.05:0.95;
 
 %mass_dist = 95:5:100; %lbm
 %OF_dist = 1.3:0.02:1.4;
@@ -62,25 +77,27 @@ max_iter = 50;
 
 %% Preload Cd vs Mach data once per prop_mass
 cd_files = containers.Map('KeyType', 'double', 'ValueType', 'any');
-for m = mass_dist
-    switch m
-        case 85
-            fname = 'MvsCd_data_85.CSV';
-        case 90
-            fname = 'MvsCd_data_90.CSV';
-        case 95
-            fname = 'MvsCd_data_95.CSV';
-        otherwise
+% for m = mass_dist
+%     switch m
+%         case 85
+%             fname = 'MvsCd_data_85.CSV';
+%         case 90
+%             fname = 'MvsCd_data_90.CSV';
+%         case 95
+%             fname = 'MvsCd_data_95.CSV';
+%         otherwise
             fname = 'MvsCd_data_100.csv';
-    end
+    % end
     data = readmatrix(fullfile(base_dir, 'input', fname));
     [M_u, uniq_idx] = unique(data(:,1));
-    cd_files(m) = struct('M_data', M_u, 'Cd_data', data(uniq_idx, 2));
-end
+    cd_files(100) = struct('M_data', M_u, 'Cd_data', data(uniq_idx, 2));
+% end
 
 %% Linear index into grid
-[MM, OO, PP, EE] = ndgrid(mass_dist, OF_dist, Pc_dist, eps_dist);
-combos = [MM(:), OO(:), PP(:), EE(:)];
+% [MM, OO, PP, EE] = ndgrid(mass_dist, OF_dist, Pc_dist, eps_dist);
+% combos = [MM(:), OO(:), PP(:), EE(:)];
+[OO, EE] = ndgrid(OF_dist, eth_dist);
+combos = [EE(:), OO(:)];
 it_ct = size(combos, 1);
 
 results = cell(it_ct, 1);
@@ -90,26 +107,40 @@ dq = parallel.pool.DataQueue;
 afterEach(dq, @(~) updateWaitbar(h, it_ct));
 
 tic;
+eth_rho = params.ethanol_density;
+water_rho = params.water_density;
 parfor it = 1:it_ct
-    prop_mass = combos(it, 1);
+    eth_ratio  = combos(it, 1);
+    prop_mass = 100; % combos(it, 1);
     OF        = combos(it, 2);
-    Pc        = combos(it, 3);
-    eps       = combos(it, 4);
+    Pc        = 370; % combos(it, 3);
+    eps       = 5; % combos(it, 4);
+    fuel_density = mass_fraction(eth_ratio, eth_rho, water_rho); % kg/m3
+    fprintf('Running iteration %d with eth_ratio = %.2f, fuel_density = %.2f\n', it, eth_ratio, fuel_density);
 
     fail_code = 0;
-    Prop  = struct('OF', OF, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
-    Press = struct('tank_press', NaN, 'V_He', NaN);
+    Prop  = struct('OF', OF, 'eth_ratio', eth_ratio, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
+    Press = struct('tank_press', NaN, 'V_He', NaN); %#ok
     dry_mass = NaN;
-    apogee = NaN;
+    apogee = NaN; %#ok
+
+    % for ablative char depth -> mass calc
+    % [injector, nozzle entrance]
+    Abl = struct('T0', [NaN, NaN], 'Pr', [NaN, NaN], 'gamma', [NaN, NaN], 'Cp', [NaN, NaN], 'Pc', NaN); %#ok
 
     %% run_CEA
-    Prop = run_CEA(Prop, params);
+    [Prop, Abl] = run_CEA(Prop, params, eth_ratio);
 
     %% run_press
-    [Prop, Press] = run_press(Prop, params);
+    [Prop, Press] = run_press(Prop, params, fuel_density);
+
+    %% get_abl
+    abl_mass = NaN;
+    char_depth = NaN;
+    [abl_mass, char_depth] = get_abl(Abl, Prop);
 
     %% get_PV_mel
-    PV_mel = get_PV_mel(prop_mass, OF, Press.tank_press, Press.V_He);
+    PV_mel = get_PV_mel(prop_mass, fuel_density, OF, Press.tank_press, Press.V_He);
 
     if isnumeric(PV_mel) && PV_mel == -1
         fail_code = -1;
@@ -131,7 +162,7 @@ parfor it = 1:it_ct
             % Calculate new dry mass based on current shock loads
             [f_drogue, f_main] = get_ShockLoads(dry_mass);
             recLoads = get_highestLoad(f_drogue, f_main, PV_mel);
-            dry_mass = get_dryMass(recLoads, PV_mel);
+            dry_mass = abl_mass + get_dryMass(recLoads, PV_mel);
             iter = iter + 1;
         end
 
@@ -158,7 +189,7 @@ parfor it = 1:it_ct
     % ^ 158.5 in is Pandora's length without tank barrels
 
     %% Row assembly
-    results{it} = {prop_mass, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, ...
+    results{it} = {prop_mass, eth_ratio, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, ...
         Press.tank_press, Press.V_He, dry_mass, PV_mel.fuel_l, PV_mel.ox_l, PV_mel.tank_wall, ...
         vehicle_length, apogee, fail_code};
 
@@ -214,6 +245,7 @@ else
         'Thrust: %.2f lbf\n' ...
         'Burn Time: %.2f s\n' ...
         'Mass Flow Rate: %.3f lbm/s\n' ...
+        'Ethanol concentration: %.2f\n' ...
         'OF Ratio: %.2f\n' ...
         'Area Ratio: %.2f\n'...
         'Chamber Pressure: %.2f psi\n' ...
@@ -229,7 +261,7 @@ else
         max_apogee, ...
         results_filtered.prop_mass(opt_idx), results_filtered.thrust(opt_idx), ...
         results_filtered.t_b(opt_idx), results_filtered.mdot(opt_idx), ...
-        results_filtered.OF(opt_idx), results_filtered.eps(opt_idx), results_filtered.Pc(opt_idx), ...
+        results_filtered.eth_ratio(opt_idx), results_filtered.OF(opt_idx), results_filtered.eps(opt_idx), results_filtered.Pc(opt_idx), ...
         results_filtered.tank_press(opt_idx), results_filtered.Isp(opt_idx), ...
         results_filtered.dry_mass(opt_idx), results_filtered.fuel_tank_length(opt_idx), ...
         results_filtered.ox_tank_length(opt_idx), results_filtered.tank_wall(opt_idx), results_filtered.vehicle_length(opt_idx));
@@ -245,17 +277,19 @@ end
 
 % only ran once for optimum combo
 
-best_prop_mass = results_filtered.prop_mass(opt_idx);
+best_prop_mass = 100; %results_filtered.prop_mass(opt_idx);
 best_OF = results_filtered.OF(opt_idx);
-best_Pc = results_filtered.Pc(opt_idx);
-best_eps = results_filtered.eps(opt_idx);
+best_Pc = 370; %results_filtered.Pc(opt_idx);
+best_eps = 5; %results_filtered.eps(opt_idx);
+best_eth_ratio = results_filtered.eth_ratio(opt_idx);
+best_fuel_density = mass_fraction(best_eth_ratio, params.ethanol_density, params.water_density); % kg/m3
 
 % Re-run the pipeline once for this combo to get the full Prop,Press, PV_mel structs
 
 Prop = struct('OF', best_OF, 'Pc', best_Pc, 'eps', best_eps, 'prop_mass', best_prop_mass);
-Prop = run_CEA(Prop, params);
-[Prop, Press] = run_press(Prop, params);
-PV_mel = get_PV_mel(best_prop_mass, best_OF, Press.tank_press, Press.V_He);
+Prop = run_CEA(Prop, params, best_eth_ratio);
+[Prop, Press] = run_press(Prop, params, best_fuel_density);
+PV_mel = get_PV_mel(best_prop_mass, best_fuel_density, best_OF, Press.tank_press, Press.V_He);
 
 
 %% Press sizing (WIP)
@@ -304,7 +338,7 @@ M_data = data(:,1);
 [M_data, uniq_idx] = unique(M_data);
 Cd_data = Cd_data(uniq_idx);
 
-get_RSE_files(Prop, params, dry_mass, PV_mel, Cd_data, M_data, "Ares", "UCLA_Rocket_Project", out_dir);
+% get_RSE_files(Prop, params, dry_mass, PV_mel, Cd_data, M_data, "Ares", "UCLA_Rocket_Project", out_dir);
 
 %% Plotting
 
