@@ -10,9 +10,9 @@ function p = input_parameters()
 
     p.T_ox = 94; % 90.17 K used in CEA
 
-    p.P_fuel_tank = 600 * 6894; %pa
+    p.P_fuel_tank = 488 * 6894; %pa
 
-    p.P_ox_tank = 600 * 6894; %pa
+    p.P_ox_tank = 488 * 6894; %pa
 
     % initial pressure inputs for CoolProp density call, not used
     % Tank pressure calculated from run_press used in main

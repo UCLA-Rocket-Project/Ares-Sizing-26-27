@@ -65,7 +65,7 @@ writecell(col_names, filtered_csv_path);
 OF_dist = 1.2:0.02:1.6;
 % Pc_dist = 200:10:600; %psi
 % eps_dist = 3:0.5:5;
-eth_dist = 0.75:0.05:0.95;
+eth_dist = 0.75:0.02:0.95;
 
 %mass_dist = 95:5:100; %lbm
 %OF_dist = 1.3:0.02:1.4;
@@ -120,7 +120,7 @@ parfor it = 1:it_ct
 
     fail_code = 0;
     Prop  = struct('OF', OF, 'eth_ratio', eth_ratio, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
-    Press = struct('tank_press', NaN, 'V_He', NaN); %#ok
+    Press = struct('tank_press', NaN, 'V_He', NaN, 'fuel_tank_volume', NaN, 'ox_tank_volume', NaN); %#ok
     dry_mass = NaN;
     apogee = NaN; %#ok
 
@@ -140,7 +140,7 @@ parfor it = 1:it_ct
     [abl_mass, char_depth] = get_abl(Abl, Prop);
 
     %% get_PV_mel
-    PV_mel = get_PV_mel(prop_mass, fuel_density, OF, Press.tank_press, Press.V_He);
+    PV_mel = get_PV_mel(Press, fuel_density, Press.tank_press, Press.V_He);
 
     if isnumeric(PV_mel) && PV_mel == -1
         fail_code = -1;
@@ -289,7 +289,7 @@ best_fuel_density = mass_fraction(best_eth_ratio, params.ethanol_density, params
 Prop = struct('OF', best_OF, 'Pc', best_Pc, 'eps', best_eps, 'prop_mass', best_prop_mass);
 Prop = run_CEA(Prop, params, best_eth_ratio);
 [Prop, Press] = run_press(Prop, params, best_fuel_density);
-PV_mel = get_PV_mel(best_prop_mass, best_fuel_density, best_OF, Press.tank_press, Press.V_He);
+PV_mel = get_PV_mel(Press, best_fuel_density, Press.tank_press, Press.V_He);
 
 
 %% Press sizing (WIP)
