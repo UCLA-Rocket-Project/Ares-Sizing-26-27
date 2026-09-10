@@ -44,7 +44,7 @@ log_path = fullfile(out_dir, 'log.txt');
 
 params = input_parameters();
 
-col_names = {'prop_mass', 'eth_ratio', 'OF', 'Pc', 'eps', 'mdot','thrust', 'Isp', 't_b','tank_press', 'V_He', 'dry_mass', ...
+col_names = {'prop_mass', 'eth_ratio', 'OF', 'char_depth', 'abl_mass', 'Pc', 'eps', 'mdot','thrust', 'Isp', 't_b','tank_press', 'V_He', 'dry_mass', ...
             'fuel_tank_length', 'ox_tank_length', 'tank_wall', 'vehicle_length', 'apogee', 'fail_code'};
 
 %Filter summary
@@ -62,8 +62,8 @@ writecell(col_names, filtered_csv_path);
 
 %% Sweep Ranges
 % mass_dist = 85:5:100; %lbm
-OF_dist = 1.2:0.02:1.6;
-% Pc_dist = 200:10:600; %psi
+OF_dist = 1.3:0.02:1.8;
+Pc_dist = 330:5:380; %psi
 % eps_dist = 3:0.5:5;
 eth_dist = 0.75:0.02:0.95;
 
@@ -96,8 +96,8 @@ cd_files = containers.Map('KeyType', 'double', 'ValueType', 'any');
 %% Linear index into grid
 % [MM, OO, PP, EE] = ndgrid(mass_dist, OF_dist, Pc_dist, eps_dist);
 % combos = [MM(:), OO(:), PP(:), EE(:)];
-[OO, EE] = ndgrid(OF_dist, eth_dist);
-combos = [EE(:), OO(:)];
+[OO, EE, PP] = ndgrid(OF_dist, eth_dist, Pc_dist);
+combos = [EE(:), OO(:), PP(:)];
 it_ct = size(combos, 1);
 
 results = cell(it_ct, 1);
@@ -110,13 +110,12 @@ tic;
 eth_rho = params.ethanol_density;
 water_rho = params.water_density;
 parfor it = 1:it_ct
-    eth_ratio  = combos(it, 1);
+    eth_ratio  = EE(it);
     prop_mass = 100; % combos(it, 1);
-    OF        = combos(it, 2);
-    Pc        = 370; % combos(it, 3);
+    OF        = OO(it);
+    Pc        = PP(it); %370; % combos(it, 3);
     eps       = 5; % combos(it, 4);
     fuel_density = mass_fraction(eth_ratio, eth_rho, water_rho); % kg/m3
-    fprintf('Running iteration %d with eth_ratio = %.2f, fuel_density = %.2f\n', it, eth_ratio, fuel_density);
 
     fail_code = 0;
     Prop  = struct('OF', OF, 'eth_ratio', eth_ratio, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
@@ -135,8 +134,8 @@ parfor it = 1:it_ct
     [Prop, Press] = run_press(Prop, params, fuel_density);
 
     %% get_abl
-    abl_mass = NaN;
-    char_depth = NaN;
+    abl_mass = NaN; %#ok
+    char_depth = NaN; %#ok
     [abl_mass, char_depth] = get_abl(Abl, Prop);
 
     %% get_PV_mel
@@ -189,7 +188,7 @@ parfor it = 1:it_ct
     % ^ 158.5 in is Pandora's length without tank barrels
 
     %% Row assembly
-    results{it} = {prop_mass, eth_ratio, OF, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, ...
+    results{it} = {prop_mass, eth_ratio, OF, char_depth, abl_mass, Pc, eps, Prop.mdot, Prop.Thrust, Prop.Isp, Prop.t_b, ...
         Press.tank_press, Press.V_He, dry_mass, PV_mel.fuel_l, PV_mel.ox_l, PV_mel.tank_wall, ...
         vehicle_length, apogee, fail_code};
 
@@ -247,6 +246,8 @@ else
         'Mass Flow Rate: %.3f lbm/s\n' ...
         'Ethanol concentration: %.2f\n' ...
         'OF Ratio: %.2f\n' ...
+        'Char Depth: %.2f in\n' ...
+        'Ablative Mass: %.2f lb\n' ...
         'Area Ratio: %.2f\n'...
         'Chamber Pressure: %.2f psi\n' ...
         'Tank Pressure: %.2f psi\n' ...
@@ -261,7 +262,9 @@ else
         max_apogee, ...
         results_filtered.prop_mass(opt_idx), results_filtered.thrust(opt_idx), ...
         results_filtered.t_b(opt_idx), results_filtered.mdot(opt_idx), ...
-        results_filtered.eth_ratio(opt_idx), results_filtered.OF(opt_idx), results_filtered.eps(opt_idx), results_filtered.Pc(opt_idx), ...
+        results_filtered.eth_ratio(opt_idx), results_filtered.OF(opt_idx), ...
+        results_filtered.char_depth(opt_idx), results_filtered.abl_mass(opt_idx), ...
+        results_filtered.eps(opt_idx), results_filtered.Pc(opt_idx), ...
         results_filtered.tank_press(opt_idx), results_filtered.Isp(opt_idx), ...
         results_filtered.dry_mass(opt_idx), results_filtered.fuel_tank_length(opt_idx), ...
         results_filtered.ox_tank_length(opt_idx), results_filtered.tank_wall(opt_idx), results_filtered.vehicle_length(opt_idx));
@@ -279,7 +282,7 @@ end
 
 best_prop_mass = 100; %results_filtered.prop_mass(opt_idx);
 best_OF = results_filtered.OF(opt_idx);
-best_Pc = 370; %results_filtered.Pc(opt_idx);
+best_Pc = results_filtered.Pc(opt_idx); %370;
 best_eps = 5; %results_filtered.eps(opt_idx);
 best_eth_ratio = results_filtered.eth_ratio(opt_idx);
 best_fuel_density = mass_fraction(best_eth_ratio, params.ethanol_density, params.water_density); % kg/m3
@@ -342,50 +345,60 @@ Cd_data = Cd_data(uniq_idx);
 
 %% Plotting
 
-if ~isempty(results_filtered) 
-    figure;
-    plot(results_filtered.vehicle_length, results_filtered.apogee, '.');
-    xlabel('Vehicle Length (in)');
-    ylabel('Apogee (ft)');
+% if ~isempty(results_filtered) 
+%     figure;
+%     plot(results_filtered.vehicle_length, results_filtered.apogee, '.');
+%     xlabel('Vehicle Length (in)');
+%     ylabel('Apogee (ft)');
 
-    figure;
-    plot(results_filtered.prop_mass, results_filtered.apogee, '.');
-    xlabel('Prop mass (lb)');
-    ylabel('Apogee (ft))');
+%     figure;
+%     plot(results_filtered.prop_mass, results_filtered.apogee, '.');
+%     xlabel('Prop mass (lb)');
+%     ylabel('Apogee (ft))');
 
-end
+% end
 
 tol = 1e-6; % float compare tolerance for matching fixed sweep values
 
-% 1-4: fixed eps=5, prop_mass=100, Pc vs OF vs {mdot, t_b, apogee, V_He}
-plot_slice(results_filtered, 'Pc','OF','mdot',  {'eps','prop_mass'}, [5,100], tol, ...
-  'mdot vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','mdot (lbm/s)');
-plot_slice(results_filtered, 'Pc','OF','t_b',   {'eps','prop_mass'}, [5,100], tol, ...
-  'Burn Time vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','t\_b (s)');
-plot_slice(results_filtered, 'Pc','OF','apogee', {'eps','prop_mass'}, [5,100], tol, ...
-  'Apogee vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','Apogee (ft)');
-plot_slice(results_filtered, 'Pc','OF','V_He',  {'eps','prop_mass'}, [5,100], tol, ...
-  'V\_He vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','V\_He (L)');
+% plot_slice(results_filtered, 'eth_ratio','OF','apogee',  {'Pc'}, [5,100], tol, ...
+%   'apogee vs eth_ratio,OF (eps=5, prop\_mass=100)', 'eth_ratio (%)','OF','apogee (ft)');
+% plot_slice(results_filtered, 'eth_ratio','Pc','apogee',  {'eps','prop_mass'}, [5,100], tol, ...
+%   'apogee vs eth_ratio,Pc (eps=5, prop\_mass=100)', 'eth_ratio (%)','Pc (psia)','apogee (ft)');
+% plot_slice(results_filtered, 'OF','Pc','apogee',  {'eps','prop_mass'}, [5,100], tol, ...
+%   'apogee vs OF,Pc (eps=5, prop\_mass=100)', 'OF','Pc (psia)','apogee (ft)');
+plot_layered_slice(results_filtered, 'eth_ratio','OF','apogee', 'prop_mass', 100, tol, ...
+  'Pc', [best_Pc, best_Pc + 5, best_Pc - 5], ...
+  'apogee vs OF & eth\_ratio, layered by Pc (prop\_mass=100)', 'eth\_ratio (%)','OF','apogee (ft)');
 
-% 5: fixed eps=5, OF=1.38, Pc vs prop_mass vs V_He
-plot_slice(results_filtered, 'Pc','prop_mass','V_He', {'eps','OF'}, [5,1.38], tol, ...
-  'V\_He vs Pc & Prop Mass (eps=5, OF=1.38)', 'Pc (psi)','Prop Mass (lb)','V\_He (L)');
+% % 1-4: fixed eps=5, prop_mass=100, Pc vs OF vs {mdot, t_b, apogee, V_He}
+% plot_slice(results_filtered, 'Pc','OF','mdot',  {'eps','prop_mass'}, [5,100], tol, ...
+%   'mdot vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','mdot (lbm/s)');
+% plot_slice(results_filtered, 'Pc','OF','t_b',   {'eps','prop_mass'}, [5,100], tol, ...
+%   'Burn Time vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','t\_b (s)');
+% plot_slice(results_filtered, 'Pc','OF','apogee', {'eps','prop_mass'}, [5,100], tol, ...
+%   'Apogee vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','Apogee (ft)');
+% plot_slice(results_filtered, 'Pc','OF','V_He',  {'eps','prop_mass'}, [5,100], tol, ...
+%   'V\_He vs Pc & OF (eps=5, prop\_mass=100)', 'Pc (psi)','OF','V\_He (L)');
 
-% 6: fixed prop_mass=100, Pc vs eps vs mdot, layered over OF = 1.2, 1.3, 1.38
-plot_layered_slice(results_filtered, 'Pc','eps','mdot', 'prop_mass', 100, tol, ...
-  'OF', [1.2, 1.3, 1.38], ...
-  'mdot vs Pc & eps, layered by OF (prop\_mass=100)', 'Pc (psi)','eps','mdot (lbm/s)');
+% % 5: fixed eps=5, OF=1.38, Pc vs prop_mass vs V_He
+% plot_slice(results_filtered, 'Pc','prop_mass','V_He', {'eps','OF'}, [5,1.38], tol, ...
+%   'V\_He vs Pc & Prop Mass (eps=5, OF=1.38)', 'Pc (psi)','Prop Mass (lb)','V\_He (L)');
 
-% 7-10: fixed prop_mass=100, OF=OF_fixed, Pc vs eps vs {mdot, t_b, apogee, V_He}
-OF_fixed = 1.38; 
-plot_slice(results_filtered, 'Pc','eps','mdot',  {'prop_mass','OF'}, [100,OF_fixed], tol, ...
-  sprintf('mdot vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','mdot (lbm/s)');
-plot_slice(results_filtered, 'Pc','eps','t_b',   {'prop_mass','OF'}, [100,OF_fixed], tol, ...
-  sprintf('Burn Time vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','t\_b (s)');
-plot_slice(results_filtered, 'Pc','eps','apogee', {'prop_mass','OF'}, [100,OF_fixed], tol, ...
-  sprintf('Apogee vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','Apogee (ft)');
-plot_slice(results_filtered, 'Pc','eps','V_He',  {'prop_mass','OF'}, [100,OF_fixed], tol, ...
-  sprintf('V\\_He vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','V\_He (L)');
+% % 6: fixed prop_mass=100, Pc vs eps vs mdot, layered over OF = 1.2, 1.3, 1.38
+% plot_layered_slice(results_filtered, 'Pc','eps','mdot', 'prop_mass', 100, tol, ...
+%   'OF', [1.2, 1.3, 1.38], ...
+%   'mdot vs Pc & eps, layered by OF (prop\_mass=100)', 'Pc (psi)','eps','mdot (lbm/s)');
+
+% % 7-10: fixed prop_mass=100, OF=OF_fixed, Pc vs eps vs {mdot, t_b, apogee, V_He}
+% OF_fixed = 1.38; 
+% plot_slice(results_filtered, 'Pc','eps','mdot',  {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+%   sprintf('mdot vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','mdot (lbm/s)');
+% plot_slice(results_filtered, 'Pc','eps','t_b',   {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+%   sprintf('Burn Time vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','t\_b (s)');
+% plot_slice(results_filtered, 'Pc','eps','apogee', {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+%   sprintf('Apogee vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','Apogee (ft)');
+% plot_slice(results_filtered, 'Pc','eps','V_He',  {'prop_mass','OF'}, [100,OF_fixed], tol, ...
+%   sprintf('V\\_He vs Pc & eps (prop\\_mass=100, OF=%.2f)', OF_fixed), 'Pc (psi)','eps','V\_He (L)');
 
 %% Local Functions
 
@@ -446,6 +459,7 @@ function plot_slice(T, xcol, ycol, zcol, fixed_cols, fixed_vals, tol, ttl, xlab,
   xlabel(xlab); ylabel(ylab); zlabel(zlab);
   title(ttl);
   colorbar; grid on; view(45,25);
+  axis vis3d;
 end
 
 
@@ -471,4 +485,5 @@ function plot_layered_slice(T, xcol, ycol, zcol, fixed_col, fixed_val, tol, laye
   title(ttl);
   legend(legend_labels(legend_labels ~= ""), 'Location','best');
   grid on; view(45,25); hold off;
+  axis vis3d;
 end
