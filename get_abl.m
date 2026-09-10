@@ -43,6 +43,7 @@ end
 
 function abl_mass = get_ablMass(char_depth, fos, mos)
     rho = 0.04046257; % lbm/in^3
-    R_ch_inner = 4.76; % in, inner radius of chamber, heritage
-    abl_mass = 0.5 * pi * (R_ch_inner^2 - (R_ch_inner - (2 * char_depth * (fos + mos)))^2) * char_depth * rho; % lb
+    R_ch_inner = 4.76 / 2; % in, inner radius of chamber, heritage
+    L_ch = 9.3; % in, length of chamber
+    abl_mass = L_ch * pi * (R_ch_inner^2 - (R_ch_inner - (char_depth * (fos + mos)))^2) * rho; % lb
 end
