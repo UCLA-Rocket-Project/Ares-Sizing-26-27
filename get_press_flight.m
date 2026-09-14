@@ -1,13 +1,6 @@
-function [out, status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, A_throat, A_exit)
+function [out, status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, A_throat, A_exit, file_name, company, out_dir)
 
   % Pressurant Sizing Function for Helium / Flight COPV
-
-% assumes choked flow at dome, checks if vdot_gas > vdot_prop, adds to dome # if not
-
-% added check that time for bottle from 4.5k to tank pressure > burn time
-% uses worst case vdot instead of averaged
-% accounts for isentropic cooling by fixing entropy instead of temperature
-
   % Unpack inputs from struct
   mdot        = Prop.mdot / 2.20462;        % lbm/s to kg/s
   tank_volume     = Press.fuel_tank_volume + Press.ox_tank_volume;     % m^3
@@ -180,6 +173,7 @@ m_helium_total = helium_mass_available;
 
   fprintf('Sim complete: t = %.4f s\n', t);
 
+
   % Duration check
   % checks if 12L actually last whole burn
 
@@ -331,6 +325,37 @@ hold off;
  legend('Location', 'northeast');
  hold off;
   
+ % write RSE file for press
+
+  COPV_length = 23; %in
+  COPV_dia = 7.87; %in 
+
+  press_mass_g = mass_copv_array * 1000; %kg to g
+  press_thrust = 0.00001; 
+  press_cg = 25.4 * COPV_length * 0.5 * ones(size(t_array)); %mm, fixed cus gas expands not like liquid prop 
+  press_code = "Press_" + file_name;
+
+  press_header = createEngineHeader(mean(thrust_array), t_array(end), press_code, COPV_dia * 25.4, press_mass_g(1), COPV_length * 25.4, press_thrust, press_mass_g(1), company);
+
+  footer = [
+        '      </data>\n' ...
+        '    </engine>\n' ...
+        '  </engine-list>\n' ...
+        '</engine-database>\n'
+    ];
+
+    pressFile = fopen(fullfile(out_dir, press_code + ".RSE"), 'w');
+    fprintf(pressFile, press_header);
+    for k = 1:length(t_array)
+     fprintf(pressFile, '<eng-data cg="%.5f" f="%.5f" m="%.5f" t="%.5f"/>\n', press_cg(k), press_thrust, press_mass_g(k), t_array(k));
+    end
+    fprintf(pressFile, footer);
+    fclose(pressFile);
+
+    writetable(table(t_array', press_cg', press_mass_g', 'VariableNames', {'t_s','cg_mm','mass_g'}), ...
+     fullfile(out_dir, press_code + "_cg.csv"));
+
+
  %% Pack structure output
 
   out.max_domes = max_domes;
@@ -342,6 +367,18 @@ hold off;
   out.Pc_array = Pc_array; % Pa
   out.mdot_array = mdot_array; % kg/s
   out.duration_ok = duration_ok;
-  out.mass_copv_array = mass_copy_array;
+  out.mass_copv_array = mass_copv_array;
 
+end
+
+function header = createEngineHeader(avgThrust, burnTime, code, dia, initWt, len, peakThrust, propWt, mfg)
+    header = sprintf([
+        '<engine-database>\n' ...
+        '<engine-list>\n' ...
+        '<engine FDiv="10" FFix="1" FStep="-1." Isp="195.96" Itot="39.78" Type="liquid" auto-calc-cg="0" auto-calc-mass="1"\n' ...
+        '    avgThrust="%.5f" burn-time="%.3f" cgDiv="10" cgFix="1" cgStep="-1." code="%s" delays="0" dia="%.1f" exitDia="0." initWt="%.2f"\n' ...
+        '    len="%.1f" mDiv="10" mFix="1" mStep="-1." massFrac="36.32" mfg="%s" peakThrust="%.5f" propWt="%.2f" tDiv="10" tFix="1"\n' ...
+        '    tStep="-1." throatDia="0">\n' ...
+        '      <data>\n'
+    ], avgThrust, burnTime, code, dia, initWt, len, mfg, peakThrust, propWt);
 end
