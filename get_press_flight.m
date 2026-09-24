@@ -333,7 +333,7 @@ hold off;
   press_mass_g = mass_copv_array * 1000; %kg to g
   press_thrust = 0.00001; 
   press_cg = 25.4 * COPV_length * 0.5 * ones(size(t_array)); %mm, fixed cus gas expands not like liquid prop 
-  press_code = "Press_" + file_name;
+  press_code = "Press_";
 
   press_header = createEngineHeader(mean(thrust_array), t_array(end), press_code, COPV_dia * 25.4, press_mass_g(1), COPV_length * 25.4, press_thrust, press_mass_g(1), company);
 

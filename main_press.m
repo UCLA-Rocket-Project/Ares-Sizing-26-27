@@ -15,6 +15,7 @@ params = input_parameters();
 params.polytropic_n_He = 1.67; 
 params.polytropic_n_N2 = 1.4;
 
+
 Prop = struct('OF', OF, 'Pc', Pc, 'eps', eps, 'prop_mass', prop_mass);
 Prop = run_CEA(Prop, params);
 [Prop, Press] = run_press(Prop, params);
@@ -37,6 +38,7 @@ CEA_obj = py.rocketcea.cea_obj.CEA_Obj(pyargs('oxName', 'LOX', 'fuelName', 'ETHA
 %% Run pressurant sizing 
 [flight_out, flight_status] = get_press_flight(Prop, Press, PV_mel, params, CEA_obj, A_throat, A_exit);
 [ground_out, ground_status] = get_press_ground(Prop, Press, params);
+apogee_blowdown = get_apogee_blowdown(flight_out.thrust_array, flight_out.mdot_array, dry_mass, prop_mass, Cd_data, M_data);
 
 %  Summary 
 
